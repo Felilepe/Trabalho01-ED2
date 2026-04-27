@@ -15,7 +15,7 @@ char* habitanteGetSobrenome(habitante h);
 
 char habitanteGetSexo(habitante h);
 
-char* habitanteGetnascimento(habitante h);
+char* habitanteGetNascimento(habitante h);
 
 
 

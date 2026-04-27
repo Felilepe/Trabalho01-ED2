@@ -95,3 +95,15 @@ void habitanteSetNascimento(habitante h, char* nascimento)
     hab -> nascimento = malloc(strlen(nascimento+1));
     strcpy(hab -> nascimento, nascimento);
 }
+
+
+
+void habitanteDestroy(habitante h)
+{
+    Habitante *hab = (Habitante*)h;
+    free(hab -> nome);
+    free(hab -> sobrenome);
+    free(hab -> nascimento);
+    free(hab);
+
+}
