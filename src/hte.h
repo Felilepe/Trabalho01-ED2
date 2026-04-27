@@ -6,7 +6,6 @@
  * @brief Tamanho máximo permitido para as chaves (strings) inseridas na tabela Hash.
  * -Inclui o caractere terminador nulo ('\0').
  **/
-#define MAX_KEY_LENGTH 32
 
 #include <stdbool.h>
 

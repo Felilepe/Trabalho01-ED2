@@ -6,6 +6,8 @@
 #include "hte.h"
 
 #define RECORDS_PER_BUCKET 50
+#define MAX_KEY_LENGTH 32
+
 
 typedef struct
 {
