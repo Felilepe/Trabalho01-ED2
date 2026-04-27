@@ -5,6 +5,8 @@ typedef void* habitante;
 
 habitante habitanteCreate(int cpf, char* nome, char* sobrenome, char sexo, char* nascimento);
 
+
+
 int habitanteGetCpf(habitante h);
 
 char* habitanteGetNome(habitante h);
