@@ -59,3 +59,39 @@ char* habitanteGetSobrenome(habitante h){return ((Habitante*)h) -> sobrenome;}
 char habitanteGetSexo(habitante h){return ((Habitante*)h) -> sexo;}
 
 char* habitanteGetNascimento(habitante h){return ((Habitante*)h) -> nascimento;}
+
+
+
+void habitanteSetCpf(habitante h, int cpf)
+{
+    ((Habitante*)h) -> cpf = cpf;
+}
+
+void habitanteSetNome(habitante h, char* nome)
+{
+    Habitante *hab = (Habitante*)h;
+    free(hab -> nome);
+    hab -> nome = malloc(strlen(nome+1));
+    strcpy(hab -> nome, nome);
+}
+
+void habitanteSetSobrenome(habitante h, char* sobrenome)
+{
+    Habitante *hab = (Habitante*)h;
+    free(hab -> sobrenome);
+    hab -> sobrenome = malloc(strlen(sobrenome+1));
+    strcpy(hab -> sobrenome, sobrenome);
+}
+
+void habitanteSetSexo(habitante h, char sexo)
+{
+((Habitante*)h) -> sexo = sexo;
+}
+
+void habitanteSetNascimento(habitante h, char* nascimento)
+{
+    Habitante *hab = (Habitante*)h;
+    free(hab -> nascimento);
+    hab -> nascimento = malloc(strlen(nascimento+1));
+    strcpy(hab -> nascimento, nascimento);
+}
