@@ -47,3 +47,15 @@ habitante habitanteCreate(int cpf, char* nome, char* sobrenome, char sexo, char*
 
     return h;
 }
+
+
+
+int habitanteGetCpf(habitante h){return ((Habitante*)h) -> cpf;}
+
+char* habitanteGetNome(habitante h){return ((Habitante*)h) -> nome;}
+
+char* habitanteGetSobrenome(habitante h){return ((Habitante*)h) -> sobrenome;}
+
+char habitanteGetSexo(habitante h){return ((Habitante*)h) -> sexo;}
+
+char* habitanteGetNascimento(habitante h){return ((Habitante*)h) -> nascimento;}
