@@ -23,13 +23,13 @@ Quadra quadraCreate(char* cep, double x, double y, double w, double h)
 {
     quadra *ret= malloc(sizeof(quadra));
     if(ret == NULL){
-        printf("Erro na alocação de memória ao criar quadra");
+        printf("Erro: falha ao alocar memória para ponteiro em quadraCreate\n");
         exit(1);
     }
     
     ret -> cep = (char*)malloc(strlen(cep) + 1);
     if(ret -> cep == NULL){
-        printf("Erro na alocação da memorio ao atribuir cep");
+        printf("Erro: falha ao alocar memória para cep em quadraCreate\n");
         return NULL;
     }
     strcpy(ret -> cep, cep);
@@ -43,14 +43,14 @@ Quadra quadraCreate(char* cep, double x, double y, double w, double h)
     
     ret -> corborda = (char*)malloc(strlen(DEFAULT_STROKE_COLOR) + 1);
     if(ret -> corborda == NULL){
-        printf("Erro na alocação da memorio ao atribuir cor da borda");
+        printf("Erro: falha ao alocar memória para cor de borda em quadraCreate\n");
         return NULL;
     }
     strcpy(ret -> corborda, DEFAULT_STROKE_COLOR);
 
     ret -> corpreench = (char*)malloc(strlen(DEFAULT_FILL_COLOR) + 1);
     if(ret -> corpreench == NULL){
-        printf("Erro na alocacao de memoria ao atribuir cor de preenchimento");
+        printf("Erro: falha ao alocar memória para cor de preenchimento em quadraCreate\n");
         return NULL;
     }
     strcpy(ret -> corpreench, DEFAULT_FILL_COLOR);
@@ -98,16 +98,27 @@ void quadraSetBordaWidth(Quadra r, double sw) {((quadra*)r) -> sw = sw;}
 
 void quadraSetCorBorda(Quadra r, char* corborda)
 {
-    free(((quadra*)r) -> corborda);
-    ((quadra*)r) -> corborda = (char*)malloc(strlen(corborda) + 1);
+    quadra *quad = (quadra*)r;
+    free(quad -> corborda);
+    quad -> corborda = (char*)malloc(strlen(corborda) + 1);
+    if(quad -> corborda == NULL){
+        printf("Erro: falha ao alocar memória para cor de borda em quadraSetCorBorda\n");
+        return NULL;
+    }
     strcpy(((quadra*)r) -> corborda, corborda);
 }
 
 void quadraSetCorPreench(Quadra r, char* corpreench)
 {
-    free(((quadra*)r) -> corpreench);
-    ((quadra*)r) -> corpreench = (char*)malloc(strlen(corpreench) + 1);
-    strcpy(((quadra*)r) -> corpreench, corpreench);
+    quadra *quad = (quadra*)r;
+    free(quad -> corpreench);
+    quad -> corpreench = (char*)malloc(strlen(corpreench) + 1);
+    if(quad -> corpreench == NULL)
+    {
+        printf("Erro: falha ao alocar memória para cor de preenchimento em quadraCreate\n");
+        return NULL;
+    }
+    strcpy(quad -> corpreench, corpreench);
 }
 
 
