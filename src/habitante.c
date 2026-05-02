@@ -18,32 +18,42 @@ habitante habitanteCreate(char* cpf, char* nome, char* sobrenome, char sexo, cha
         return NULL;
     }
 
-    h -> cpf = malloc(strlen(cpf) + 1);
+    h -> cpf = (char*)malloc(strlen(cpf) + 1);
     if(h -> cpf == NULL){
         printf("Erro: falha ao alocar memoria para cpf em habitanteCreate\n");
+        free(h);
         return NULL;
     }
     strcpy(h -> cpf, cpf);
 
-    h -> nome = malloc(strlen(nome) + 1);
+    h -> nome = (char*)malloc(strlen(nome) + 1);
     if(h -> nome == NULL){
         printf("Erro: falha ao alocar memoria para nome em habitanteCreate\n");
+        free(h -> cpf);
+        free(h);
         return NULL;
     }
     strcpy(h -> nome, nome);
 
-    h -> sobrenome = malloc(strlen(sobrenome) + 1);
+    h -> sobrenome = (char*)malloc(strlen(sobrenome) + 1);
     if(h -> sobrenome == NULL){
         printf("Erro: falha ao alocar memoria para sobrenome em habitanteCreate\n");
+        free(h -> cpf);
+        free(h -> nome);
+        free(h);
         return NULL;
     }
     strcpy(h -> sobrenome, sobrenome);
     
     h -> sexo = sexo;
 
-    h -> nascimento = malloc(strlen(nascimento) + 1);
+    h -> nascimento = (char*)malloc(strlen(nascimento) + 1);
     if(h -> nascimento == NULL){
         printf("Erro: falha ao alocar memoria para data de nascimento em habitanteCreate\n");
+        free(h -> nome);
+        free(h -> sobrenome);
+        free(h -> cpf);
+        free(h);
         return NULL;
     }
     strcpy(h -> nascimento, nascimento);

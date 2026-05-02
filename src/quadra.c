@@ -30,6 +30,7 @@ Quadra quadraCreate(char* cep, double x, double y, double w, double h)
     ret -> cep = (char*)malloc(strlen(cep) + 1);
     if(ret -> cep == NULL){
         printf("Erro: falha ao alocar memoria para cep em quadraCreate\n");
+        free(ret);
         return NULL;
     }
     strcpy(ret -> cep, cep);
@@ -44,12 +45,17 @@ Quadra quadraCreate(char* cep, double x, double y, double w, double h)
     ret -> corborda = (char*)malloc(strlen(DEFAULT_STROKE_COLOR) + 1);
     if(ret -> corborda == NULL){
         printf("Erro: falha ao alocar memoria para cor de borda em quadraCreate\n");
+        free(ret -> cep);
+        free(ret);
         return NULL;
     }
     strcpy(ret -> corborda, DEFAULT_STROKE_COLOR);
 
     ret -> corpreench = (char*)malloc(strlen(DEFAULT_FILL_COLOR) + 1);
     if(ret -> corpreench == NULL){
+        free(ret -> cep);
+        free(ret -> corborda);
+        free(ret);
         printf("Erro: falha ao alocar memoria para cor de preenchimento em quadraCreate\n");
         return NULL;
     }

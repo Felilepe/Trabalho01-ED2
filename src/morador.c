@@ -23,6 +23,7 @@ Morador moradorCreate(char* cpf, char* cep, char face, int num, char* complement
     m -> cpf = (char*)malloc(strlen(cpf) + 1);
     if(m -> cpf == NULL){
         printf("Erro: falha ao alocar memoria para cpf em moradorCreate\n");
+        free(m);
         return NULL;
     }
     strcpy(m -> cpf, cpf);
@@ -30,6 +31,8 @@ Morador moradorCreate(char* cpf, char* cep, char face, int num, char* complement
     m -> comp = (char*)malloc(strlen(complemento) + 1);
     if(m -> comp == NULL){
         printf("Erro: falha ao alocar memoria para complemento em moradorCreate\n");
+        free(m -> cpf);
+        free(m);
         return NULL;
     }
     strcpy(m -> comp, complemento);
@@ -37,6 +40,9 @@ Morador moradorCreate(char* cpf, char* cep, char face, int num, char* complement
     m -> cep = (char*)malloc(strlen(cep) + 1);
     if(m -> cep == NULL){
         printf("Erro: falha ao alocar memoria para cep em moradorCreate\n");
+        free(m -> cpf);
+        free(m -> comp);
+        free(m);
         return NULL;
     }
     strcpy(m -> cep, cep);
