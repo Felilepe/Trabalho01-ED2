@@ -11,7 +11,7 @@ typedef void* Hash;
  
 /**
  * @brief Abre ou cria um arquivo de banco de dados Hash.
- * Se o arquivo já existir (ex: "quadras.hf"), carrega o diretório a partir
+ * Se o arquivo já existir (ex: "quadras.hf"), carrega o diretorio a partir
  * do arquivo auxiliar correspondente (ex: "quadras.hfc").
  * Se não existir, cria um novo arquivo e inicializa a estrutura.
  * @param filename Caminho do arquivo binário principal (ex: "quadras.hf").
@@ -55,9 +55,9 @@ bool hashExists(Hash h, char* key);
 int hashGetRegistry(Hash h, char* key);
  
 /**
- * @brief Retorna o número de entradas no diretório (potência de 2).
+ * @brief Retorna o número de entradas no diretorio (potência de 2).
  * @param h Ponteiro para a estrutura Hash.
- * @return Tamanho do diretório (int), ou -1 em caso de erro.
+ * @return Tamanho do diretorio (int), ou -1 em caso de erro.
  **/
 int hashGetSize(Hash h);
  
@@ -72,9 +72,9 @@ int hashGetSize(Hash h);
 void hashDumpFile(Hash h, const char* filename);
  
 /**
- * @brief Fecha o hashfile de forma segura, persistindo o diretório em disco.
+ * @brief Fecha o hashfile de forma segura, persistindo o diretorio em disco.
  * Salva profundidade global, tamanho e offsets no arquivo .hfc correspondente,
- * libera toda a memória alocada e fecha os arquivos.
+ * libera toda a memoria alocada e fecha os arquivos.
  * @param h Ponteiro para a estrutura Hash a ser fechada.
  **/
 void hashCloseFile(Hash h);

@@ -5,7 +5,7 @@
 typedef void* Quadra;
 
 /****************************************************************************************
-* @brief Cria e aloca a memória para um novo retângulo com os parâmetros fornecidos.    
+* @brief Cria e aloca a memoria para um novo retângulo com os parâmetros fornecidos.    
 * @param cep Identificador único para o retângulo.                                       
 * @param x Coordenada X do âncora do retângulo.                                         
 * @param y Coordenada Y do âncora do retângulo.                                         
@@ -25,7 +25,7 @@ Quadra quadraCreate(char* cep, double x, double  y, double w, double h);
 double quadraCalcArea(Quadra r);
 
 /****************************************************************************************
-* @brief Libera a memória alocada para o retângulo.
+* @brief Libera a memoria alocada para o retângulo.
 * @param r O retângulo a ser destruído.
 ****************************************************************************************/
 void quadraDestroy(Quadra r);

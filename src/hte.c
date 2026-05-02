@@ -64,7 +64,7 @@ static void split_bucket(hte_directory *dir,
                           bucket        *old_bucket,
                           long           old_offset)
 {
-    /* ── 1. Dobra o diretório se necessário ── */
+    /* ── 1. Dobra o diretorio se necessário ── */
     if (old_bucket->local_depth == dir->global_depth) {
         size_t old_size = dir->directory_size;
  
@@ -80,7 +80,7 @@ static void split_bucket(hte_directory *dir,
         }
         dir->bucket_offsets = tmp;
  
-        /* A segunda metade começa como cópia da primeira */
+        /* A segunda metade começa como copia da primeira */
         for (size_t i = 0; i < old_size; i++)
             dir->bucket_offsets[i + old_size] = dir->bucket_offsets[i];
     }
@@ -127,7 +127,7 @@ static void split_bucket(hte_directory *dir,
         }
     }
  
-    /* ── 6. Atualiza ponteiros do diretório ── */
+    /* ── 6. Atualiza ponteiros do diretorio ── */
     uint32_t shared_mask = split_bit - 1;
     uint32_t shared_bits = index & shared_mask;
  
@@ -190,7 +190,7 @@ Hash hashOpenFile(const char *filename)
         fwrite(&init, sizeof(bucket), 1, f);
  
     } else {
-        /* ── Arquivo existente: carrega diretório do .hfc ── */
+        /* ── Arquivo existente: carrega diretorio do .hfc ── */
         dir->disk_file = f;
  
         FILE *hfc = fopen(dir->hfc_filename, "rb");
@@ -345,7 +345,7 @@ void hashDumpFile(Hash h, const char *filename)
     long visited[1 << 16];
     int  n_visited = 0;
  
-    fprintf(out, "--- Entradas do Diretório ---\n");
+    fprintf(out, "--- Entradas do Diretorio ---\n");
     for (size_t i = 0; i < dir->directory_size; i++) {
         fprintf(out, "  dir[%3zu] -> offset %ld\n", i, dir->bucket_offsets[i]);
     }
@@ -386,7 +386,7 @@ void hashCloseFile(Hash h)
  
     hte_directory *dir = (hte_directory*)h;
  
-    /* Persiste o diretório no arquivo .hfc */
+    /* Persiste o diretorio no arquivo .hfc */
     FILE *hfc = fopen(dir->hfc_filename, "wb");
     if (hfc != NULL) {
         fwrite(&dir->global_depth,    sizeof(int),    1, hfc);

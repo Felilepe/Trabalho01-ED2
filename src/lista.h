@@ -36,8 +36,8 @@ bool lista_isEmpty(Lista *l);
 void lista_passthrough(Lista *l, void (*acao)(item i, item aux_data), item aux_data);
 
 /******************************************************************
-*@brief Libera toda a memória alocada pelos nós da lista.
-*@note NÃO libera a memória dos 'itens' (dados) armazenados.
+*@brief Libera toda a memoria alocada pelos nos da lista.
+*@note NÃO libera a memoria dos 'itens' (dados) armazenados.
 *@param l Ponteiro para a lista a ser destruída.
 ******************************************************************/
 void lista_destroy(Lista *l);
@@ -92,7 +92,7 @@ void lista_insertTail(Lista *l, item i);
 *@brief Remove e retorna o item do início da lista.
 *@param l Ponteiro para a lista.
 *@return Retorna o ponteiro para o item (void*) removido.
-*@note Apenas libera o nó da lista, não o dado 'item'.
+*@note Apenas libera o no da lista, não o dado 'item'.
 *@note Causa 'exit(1)' se a lista estiver vazia.
 **********************************************************************************/
 void lista_removeHead(Lista *l);
@@ -101,16 +101,16 @@ void lista_removeHead(Lista *l);
 *@brief Remove e retorna o item do fim da lista.
 *@param l Ponteiro para a lista.
 *@return Retorna o ponteiro para o item (void*) removido.
-*@note Apenas libera o nó da lista, não o dado 'item'.
+*@note Apenas libera o no da lista, não o dado 'item'.
 *@note Causa 'exit(1)' se a lista estiver vazia.
 **********************************************************************************/
 void lista_removeTail(Lista *l);
 
 /**********************************************************************************
-*@brief Remove um nó da lista em uma posição específica.
+*@brief Remove um no da lista em uma posição específica.
 *@param l Ponteiro para a lista.
-*@param index O índice do nó a ser removido (0 a size-1).
-*@note Apenas libera o nó da lista, não o dado 'item'.
+*@param index O índice do no a ser removido (0 a size-1).
+*@note Apenas libera o no da lista, não o dado 'item'.
 *@note Encerra o programa se o índice for inválido.
 **********************************************************************************/
 void lista_removeNode(Lista *l, int index);
