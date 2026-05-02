@@ -1,76 +1,82 @@
 #ifndef HTE_H
 #define HTE_H
-
-/**
- * @def MAX_KEY_LENGTH
- * @brief Tamanho máximo permitido para as chaves (strings) inseridas na tabela Hash.
- * -Inclui o caractere terminador nulo ('\0').
- **/
-
+ 
 #include <stdbool.h>
-
+ 
 /**
  * @typedef Hash
- * @brief Tipo opaco que representa a Tabela Hash Extensível.
- * -Esconde a implementação interna (o hte_directory) do utilizador da biblioteca.
+ * @brief Tipo opaco que representa o Hashfile Dinâmico em disco.
  **/
 typedef void* Hash;
-
+ 
 /**
- * @brief Abre ou cria um ficheiro de banco de dados Hash.
- * -Se o ficheiro já existir, carrega a estrutura do diretório para a memória.
- * -Se não existir, cria um novo ficheiro e inicializa a estrutura básica.
- * @param filename Nome ou caminho do ficheiro binário principal (ex: "banco.bin").
- * @return Retorna um ponteiro válido para a estrutura Hash, ou NULL em caso de erro.
+ * @brief Abre ou cria um arquivo de banco de dados Hash.
+ * Se o arquivo já existir (ex: "quadras.hf"), carrega o diretório a partir
+ * do arquivo auxiliar correspondente (ex: "quadras.hfc").
+ * Se não existir, cria um novo arquivo e inicializa a estrutura.
+ * @param filename Caminho do arquivo binário principal (ex: "quadras.hf").
+ * @return Ponteiro válido para a estrutura Hash, ou NULL em caso de erro.
  **/
-Hash hash_openFile(const char* filename);
-
+Hash hashOpenFile(const char* filename);
+ 
 /**
- * @brief Insere um novo registo (chave-valor) na tabela Hash.
- * @param h Ponteiro para a estrutura Hash aberta.
- * @param key String representando a chave a ser inserida (máx. MAX_KEY_LENGTH).
- * @param value Valor inteiro associado à chave.
- * @return Retorna true se a inserção for bem-sucedida, ou false se houver erro (ex: ponteiro nulo).
+ * @brief Insere ou atualiza um registro (chave -> valor inteiro) no hashfile.
+ * Se a chave já existir, o valor é atualizado. Se o bucket estiver cheio,
+ * um split é realizado automaticamente.
+ * @param h   Ponteiro para a estrutura Hash.
+ * @param key Chave string (máx. 31 caracteres úteis + '\0').
+ * @param value Valor inteiro a associar à chave.
+ * @return true se bem-sucedido, false em caso de erro (ponteiro nulo).
  **/
-bool hash_insertReg(Hash h, char* key, int value);
-
+bool hashInsertReg(Hash h, char* key, int value);
+ 
 /**
- * @brief Remove um registo da tabela Hash com base na sua chave.
- * @param h Ponteiro para a estrutura Hash aberta.
- * @param key String representando a chave a ser removida.
- * @return Retorna true se o registo foi encontrado e removido, ou false caso contrário.
+ * @brief Remove um registro do hashfile com base na chave.
+ * @param h   Ponteiro para a estrutura Hash.
+ * @param key Chave do registro a remover.
+ * @return true se encontrado e removido, false caso contrário.
  **/
-bool hash_removeReg(Hash h, char* key);
-
+bool hashRemoveReg(Hash h, char* key);
+ 
 /**
- * @brief Obtém o tamanho atual do diretório do Hashing Extensível.
+ * @brief Verifica se uma chave existe no hashfile.
+ * @param h   Ponteiro para a estrutura Hash.
+ * @param key Chave a procurar.
+ * @return true se existe, false caso contrário.
+ **/
+bool hashExists(Hash h, char* key);
+ 
+/**
+ * @brief Recupera o valor inteiro associado a uma chave.
+ * @param h   Ponteiro para a estrutura Hash.
+ * @param key Chave a procurar.
+ * @return O valor associado, ou -1 se a chave não existir ou houver erro.
+ **/
+int hashGetRegistry(Hash h, char* key);
+ 
+/**
+ * @brief Retorna o número de entradas no diretório (potência de 2).
  * @param h Ponteiro para a estrutura Hash.
- * @return Retorna o número de entradas no diretório (directory_size), ou -1 em caso de erro.
+ * @return Tamanho do diretório (int), ou -1 em caso de erro.
  **/
-int hash_getSize(Hash h);
-
+int hashGetSize(Hash h);
+ 
 /**
- * @brief Verifica se uma chave específica já existe na tabela Hash.
- * @param h Ponteiro para a estrutura Hash.
- * @param key String representando a chave a ser procurada.
- * @return Retorna true se a chave existe, ou false se não for encontrada ou houver erro.
+ * @brief Gera um arquivo-texto legível (.hfd) com o estado atual do hashfile.
+ * Mostra: profundidade global, cada bucket com profundidade local,
+ * número de registros e as chaves armazenadas.
+ * Também registra quantas expansões ocorreram até o momento.
+ * @param h        Ponteiro para a estrutura Hash.
+ * @param filename Caminho do arquivo .hfd a ser gerado.
  **/
-bool hash_exists(Hash h, char* key);
-
+void hashDumpFile(Hash h, const char* filename);
+ 
 /**
- * @brief Recupera o valor associado a uma determinada chave.
- * @param h Ponteiro para a estrutura Hash.
- * @param key String representando a chave a ser procurada.
- * @return Retorna o valor (int) associado à chave, ou -1 se a chave não for encontrada.
- **/
-int hash_getRegistry(Hash h, char* key);
-
-/**
- * @brief Fecha a tabela Hash de forma segura, guardando o estado no disco.
- * -Grava as informações vitais (profundidade global, tamanho do diretório e 
- * offsets) num ficheiro auxiliar ("diretorio.bin") e liberta a memória RAM.
+ * @brief Fecha o hashfile de forma segura, persistindo o diretório em disco.
+ * Salva profundidade global, tamanho e offsets no arquivo .hfc correspondente,
+ * libera toda a memória alocada e fecha os arquivos.
  * @param h Ponteiro para a estrutura Hash a ser fechada.
  **/
-void hash_closeFile(Hash h);
-
+void hashCloseFile(Hash h);
+ 
 #endif
