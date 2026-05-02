@@ -90,6 +90,15 @@ void svgMarcaRedSquare(FILE *file_name, double x, double y)
     insert_square(file_name, x, y, 5, 5, "red", "red");
 }
 
+void svgMarcaCep(FILE *svg, Quadra q)
+{
+    // Canto superior esquerdo = x + pequeno offset, y + pequeno offset
+    double x = quadraGetCoordX(q) + 2.0;
+    double y = quadraGetCoordY(q) + 8.0;
+
+    svgInsertText(svg, x, y, quadraGetCep(q), "black", 6);
+}
+
 
 
 void draw(item i, item aux)
