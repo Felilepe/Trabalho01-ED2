@@ -132,3 +132,27 @@ Hash hash_openFile(const char *filename)
  
     return dir;
 }
+
+bool hashExists(Hash h, char *key)
+{
+    if (h == NULL || key == NULL) return false;
+ 
+    hte_directory *dir = (hte_directory*)h;
+ 
+    uint32_t hash_val = hash_function_32(key);
+    uint32_t mask     = (dir->global_depth == 0) ? 0
+                        : ((uint32_t)1 << dir->global_depth) - 1;
+    long     offset   = dir->bucket_offsets[hash_val & mask];
+ 
+    bucket cur;
+    fseek(dir->disk_file, offset, SEEK_SET);
+    if (fread(&cur, sizeof(bucket), 1, dir->disk_file) != 1) return false;
+ 
+    for (int i = 0; i < RECORDS_PER_BUCKET; i++) {
+        if (cur.records[i].is_occupied &&
+            strncmp(cur.records[i].key, key, MAX_KEY_LENGTH) == 0)
+            return true;
+    }
+    return false;
+}
+
