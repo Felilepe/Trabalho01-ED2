@@ -6,7 +6,7 @@ typedef void* Quadra;
 
 /****************************************************************************************
 * @brief Cria e aloca a memória para um novo retângulo com os parâmetros fornecidos.    
-* @param id Identificador único para o retângulo.                                       
+* @param cep Identificador único para o retângulo.                                       
 * @param x Coordenada X do âncora do retângulo.                                         
 * @param y Coordenada Y do âncora do retângulo.                                         
 * @param w Largura do retângulo.                                                        
@@ -15,7 +15,7 @@ typedef void* Quadra;
 * @param corpreench String que representa a cor de preenchimento.                       
 * @return Retorna um ponteiro do tipo Quadra para o retângulo recém-criado.          
 ****************************************************************************************/
-Quadra quadraCreate(int id, double x, double  y, double w, double h, double borda_w, char *corborda, char *corpreench);
+Quadra quadraCreate(char* cep, double x, double  y, double w, double h);
 
 /****************************************************************************************
 * @brief Obtém a área de um retângulo.                                                  
@@ -87,7 +87,7 @@ double quadraGetBordaWidth(Quadra r);
  * @param r O retângulo do qual o ID será obtido.                                        
  * @return Retorna o valor do ID (um int).                                               
  ****************************************************************************************/
-int quadraGetID(Quadra r);
+char* quadraGetCep(Quadra r);
 
 /****************************************************************************************
  * @brief Obtém o Tipo de um retângulo.                                                    

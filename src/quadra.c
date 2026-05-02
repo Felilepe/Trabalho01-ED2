@@ -11,15 +11,15 @@
 
 typedef struct quadra 
 {
-    int cpf, type;
+    int type;
     double x, y, w, h, sw;
-    char *corborda, *corpreench;
+    char *corborda, *corpreench, *cep;
 
 }quadra;
 
 
 
-Quadra quadraCreate(int cpf, double x, double y, double w, double h)
+Quadra quadraCreate(char* cep, double x, double y, double w, double h)
 {
     quadra *ret= malloc(sizeof(quadra));
     if(ret == NULL){
@@ -27,7 +27,13 @@ Quadra quadraCreate(int cpf, double x, double y, double w, double h)
         exit(1);
     }
     
-    ret -> cpf = cpf;
+    ret -> cep = (char*)malloc(strlen(cep) + 1);
+    if(ret -> cep == NULL){
+        printf("Erro na alocação da memorio ao atribuir cep");
+        return NULL;
+    }
+    strcpy(ret -> cep, cep);
+
     ret -> type = TIPO_R;
     ret -> x = x;
     ret -> y = y;
@@ -57,7 +63,7 @@ double quadraGetCoordX(Quadra r) {return ((quadra*)r) -> x;}
 
 double quadraGetCoordY(Quadra r) {return ((quadra*)r) -> y;}
 
-int quadraGetID(Quadra r) {return((quadra*)r) -> cpf;}
+char* quadraGetCep(Quadra r) {return((quadra*)r) -> cep;}
 
 double quadraGetHeight(Quadra r) {return ((quadra*)r) -> h;}
 
@@ -71,7 +77,7 @@ char* quadraGetCorPreench(Quadra r) {return ((quadra*)r) -> corpreench;}
 
 int quadraGetType(Quadra r) {return ((quadra*)r) -> type;}
 
-double quadra_CalcArea(Quadra r)
+double quadraCalcArea(Quadra r)
 {
     double altura = ((quadra*)r) -> h;
     double largura = ((quadra*)r) -> w;
@@ -107,6 +113,7 @@ void quadraSetCorPreench(Quadra r, char* corpreench)
 
 void quadraDestroy(Quadra r)
 {
+    free(((quadra*)r) -> cep);    
     free(((quadra*)r) -> corborda);
     free(((quadra*)r) -> corpreench);
     free(r);

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "quadra.h"
+#include "svg.h"
 
 #include "lista.h"
 
@@ -39,8 +40,8 @@ void stopSVG(FILE *file_name)
 void svgInsertQuadra(FILE *file_name, Quadra r)
 {
     fprintf(file_name, "\t<rect id=\"%d\" x=\"%lf\" y=\"%lf\" width=\"%lf\" height=\"%lf\" stroke=\"%s\" fill=\"%s\" opacity=\"%lf\" stroke-width=\"%lf\" />\n",
-	    quadraGetID(r), quadraGetCoordX(r), quadraGetCoordY(r), quadraGetWidth(r), quadraGetHeight(r), quadraGetCorBorda(r), 
-        quadraGetCorPreench(r), OPACITY, quadraGetBordaWidth);
+	    quadraGetCep(r), quadraGetCoordX(r), quadraGetCoordY(r), quadraGetWidth(r), quadraGetHeight(r), quadraGetCorBorda(r), 
+        quadraGetCorPreench(r), OPACITY, quadraGetBordaWidth(r));
 }
 
 
@@ -52,6 +53,12 @@ static void callback_inserir_quadra(void* item, void* aux)
     FILE* arquivo = (FILE*)aux; 
     
     svgInsertQuadra(arquivo, r);
+}
+
+void draw(item i, item aux)
+{
+    FILE* svg = (FILE*)aux;
+    svgInsertQuadra(svg, (Quadra)i);
 }
 
 FILE* createSVG(const char *svg_path, Lista *formas)
