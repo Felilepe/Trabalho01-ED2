@@ -103,7 +103,7 @@ void quadraSetCorBorda(Quadra r, char* corborda)
     quad -> corborda = (char*)malloc(strlen(corborda) + 1);
     if(quad -> corborda == NULL){
         printf("Erro: falha ao alocar memória para cor de borda em quadraSetCorBorda\n");
-        return NULL;
+        return;
     }
     strcpy(((quadra*)r) -> corborda, corborda);
 }
@@ -116,7 +116,7 @@ void quadraSetCorPreench(Quadra r, char* corpreench)
     if(quad -> corpreench == NULL)
     {
         printf("Erro: falha ao alocar memória para cor de preenchimento em quadraCreate\n");
-        return NULL;
+        return;
     }
     strcpy(quad -> corpreench, corpreench);
 }
