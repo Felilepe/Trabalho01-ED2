@@ -30,7 +30,13 @@ void svgMarcaRedCross(FILE *file_name, double x, double y);
 
 void svgMarcaBlackCircle(FILE *file_name, double x, double y);
 
-void svgMarcaRedSquare(FILE *file_name, double x, double y);
+void svgMarcaRedSquare(FILE *file_name, double x, double y, char* cpf);
+
+void svgMarcaCep(FILE *svg, Quadra q);
+
+void svgMarcaContagemFace(FILE *svg, Quadra q, char face, int contagem);
+
+void svgMarcaContagemTotal(FILE *svg, Quadra q, int total);
 
 /******************************************************************
 *@brief Função de callback para `fila_passthrough` que desenha um item.
