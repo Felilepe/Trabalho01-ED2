@@ -8,6 +8,37 @@
 
 
 #define OPACITY 0.5
+#define DEFAULT_WIDTH 1.5
+#define DEFAULT_FONT "Arial"
+#define DEFAULT_WEIGHT 400
+
+
+static void insert_text(FILE *file_name, double x, double y, char* texto, char *corborda, char*corpreench, int tamanho, char* anchor)
+{
+    fprintf(file_name, "\t<text x=\"%lf\" y=\"%lf\" stroke=\"%s\" fill=\"%s\" font-family=\"%s\" font-weight=\"%s\" font-size=\"%spt\" text-anchor=\"%s\">%s</text>\n",
+       x, y, corborda, corpreench, DEFAULT_FONT, DEFAULT_WEIGHT, tamanho, anchor, texto);
+}
+
+static void insert_square(FILE *file_name, double x, double y, double w, double h, char* corpreench, char* corborda)
+{
+    fprintf(file_name, "\t<rect x=\"%lf\" y=\"%lf\" width=\"%lf\" height=\"%lf\" stroke=\"%s\" fill=\"%s\" opacity=\"%lf\" stroke-width=\"%lf\" />\n",
+	    x, y, w, h, corpreench, corborda, OPACITY, DEFAULT_WIDTH);
+}
+
+static void insert_circle(FILE *file_name, double x, double y, double r, char* corpreench, char* corborda)
+{
+    fprintf(file_name, " <circle cx=\"%lf\" cy=\"%lf\" r=\"%lf\" stroke=\"%s\" fill=\"%s\" opacity=\"%lf\" stroke-width=\"%lf\" />\n",
+    x, y, r, corpreench, corborda, OPACITY, DEFAULT_WIDTH);
+}
+
+static void callback_inserir_quadra(void* item, void* aux) 
+{
+    Quadra r = (Quadra)item;
+    FILE* arquivo = (FILE*)aux; 
+    
+    svgInsertQuadra(arquivo, r);
+}
+
 
 
 FILE* startSVG(const char* file_path) {
@@ -44,16 +75,22 @@ void svgInsertQuadra(FILE *file_name, Quadra r)
         quadraGetCorPreench(r), OPACITY, quadraGetBordaWidth(r));
 }
 
-
-
-
-static void callback_inserir_quadra(void* item, void* aux) 
+void svgMarcaRedCross(FILE *file_name, double x, double y)
 {
-    Quadra r = (Quadra)item;
-    FILE* arquivo = (FILE*)aux; 
-    
-    svgInsertQuadra(arquivo, r);
+    insert_text(file_name, x, y, "†", "red", "red", 12, "middle");
 }
+
+void svgMarcaBlackCircle(FILE *file_name, double x, double y)
+{
+    insert_circle(file_name, x, y, 5, "black", "black");
+}
+
+void svgMarcaRedSquare(FILE *file_name, double x, double y)
+{
+    insert_square(file_name, x, y, 5, 5, "red", "red");
+}
+
+
 
 void draw(item i, item aux)
 {

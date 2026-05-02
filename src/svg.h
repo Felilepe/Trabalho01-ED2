@@ -26,6 +26,12 @@ void stopSVG(FILE *file_name);
 ******************************************************************/
 void svgInsertQuadra(FILE *file_name, Quadra r);
 
+void svgMarcaRedCross(FILE *file_name, double x, double y);
+
+void svgMarcaBlackCircle(FILE *file_name, double x, double y);
+
+void svgMarcaRedSquare(FILE *file_name, double x, double y);
+
 /******************************************************************
 *@brief Função de callback para `fila_passthrough` que desenha um item.
 *@param i O item (forma) a ser desenhado.
