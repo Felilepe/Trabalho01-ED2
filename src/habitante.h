@@ -3,11 +3,11 @@
 
 typedef void* habitante;
 
-habitante habitanteCreate(int cpf, char* nome, char* sobrenome, char sexo, char* nascimento);
+habitante habitanteCreate(char* cpf, char* nome, char* sobrenome, char sexo, char* nascimento);
 
 
 
-int habitanteGetCpf(habitante h);
+char* habitanteGetCpf(habitante h);
 
 char* habitanteGetNome(habitante h);
 
@@ -19,7 +19,7 @@ char* habitanteGetNascimento(habitante h);
 
 
 
-void habitanteSetCpf(habitante h, int cpf);
+void habitanteSetCpf(habitante h, char* cpf);
 
 void habitanteSetNome(habitante h, char* nome);
 

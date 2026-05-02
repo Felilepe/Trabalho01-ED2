@@ -5,21 +5,25 @@
 
 typedef struct st_habitante
 {
-    int cpf;
-    char* nome, *sobrenome;
+    char* nome, *sobrenome, *cpf;
     char sexo;
     char* nascimento;
 }Habitante;
 
-habitante habitanteCreate(int cpf, char* nome, char* sobrenome, char sexo, char* nascimento)
+habitante habitanteCreate(char* cpf, char* nome, char* sobrenome, char sexo, char* nascimento)
 {
     Habitante *h = malloc(sizeof(Habitante));
     if(h == NULL){
-        printf("ERRO: falha ao alocar memória para ponteiro em habitanteCreate");
+        printf("Erro: falha ao alocar memória para ponteiro em habitanteCreate");
         return NULL;
     }
 
-    h -> cpf = cpf;
+    h -> cpf = malloc(strlen(cpf) + 1);
+    if(h -> cpf == NULL){
+        printf("Erro: falha ao alocar memória para cpf em habitanteCreate");
+        return NULL;
+    }
+    strcpy(h -> cpf, cpf);
 
     h -> nome = malloc(strlen(nome) + 1);
     if(h -> nome == NULL){
@@ -50,7 +54,7 @@ habitante habitanteCreate(int cpf, char* nome, char* sobrenome, char sexo, char*
 
 
 
-int habitanteGetCpf(habitante h){return ((Habitante*)h) -> cpf;}
+char* habitanteGetCpf(habitante h){return ((Habitante*)h) -> cpf;}
 
 char* habitanteGetNome(habitante h){return ((Habitante*)h) -> nome;}
 
@@ -62,9 +66,12 @@ char* habitanteGetNascimento(habitante h){return ((Habitante*)h) -> nascimento;}
 
 
 
-void habitanteSetCpf(habitante h, int cpf)
+void habitanteSetCpf(habitante h, char* cpf)
 {
-    ((Habitante*)h) -> cpf = cpf;
+    Habitante *hab = (Habitante*)h;
+    free(hab -> cpf);
+    hab -> cpf = malloc(strlen(cpf) + 1);
+    strcpy(hab -> cpf, cpf);
 }
 
 void habitanteSetNome(habitante h, char* nome)
