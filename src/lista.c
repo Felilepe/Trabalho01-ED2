@@ -230,7 +230,7 @@ void lista_removeHead(Lista *l)
 
     if(lista_isEmpty(l)){
         l->tail = NULL;
-    } else {
+    } else if (l->head != NULL) {
         l->head->prev = NULL;
     }
     
