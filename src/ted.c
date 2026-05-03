@@ -9,7 +9,7 @@
 #include "parse_pm.h"
 #include "parse_qry.h"
  
-#define PATH_LEN      512
+#define PATH_LEN      256
 #define FILE_NAME_LEN 256
  
 /* ── Extrai o nome-base de um caminho (sem diretório, sem extensão) ── */
@@ -139,9 +139,9 @@ int main(int argc, char *argv[])
     snprintf(aux, PATH_LEN, "%s/%s_habitantes.hfc", dir_saida, base_geo); remove(aux);
     snprintf(aux, PATH_LEN, "%s/%s_moradores.hfc",  dir_saida, base_geo); remove(aux);
  
-    Hash h_quadras = hash_openFile(path_hf_quad);
-    Hash h_hab     = hash_openFile(path_hf_hab);
-    Hash h_mor     = hash_openFile(path_hf_mor);
+    Hash h_quadras = hashOpenFile(path_hf_quad);
+    Hash h_hab     = hashOpenFile(path_hf_hab);
+    Hash h_mor     = hashOpenFile(path_hf_mor);
  
     if (!h_quadras || !h_hab || !h_mor) {
         fprintf(stderr, "ERRO: falha ao abrir hashfiles\n");
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "ERRO: nao foi possivel criar arquivos de saida da query\n");
         } else {
             DrawCtx draw_ctx = { svg_qry, h_quadras };
-            hash_forEach(h_quadras, cb_draw_quadra, &draw_ctx);
+            hashForEach(h_quadras, cb_draw_quadra, &draw_ctx);
  
             parseQry(path_qry, h_quadras, h_hab, h_mor, svg_qry, txt_qry);
  
@@ -196,15 +196,15 @@ int main(int argc, char *argv[])
  
     char path_hfd[PATH_LEN];
     snprintf(path_hfd, PATH_LEN, "%s/%s_quadras.hfd",    dir_saida, base_geo);
-    hash_dumpFile(h_quadras, path_hfd);
+    hashDumpFile(h_quadras, path_hfd);
     snprintf(path_hfd, PATH_LEN, "%s/%s_habitantes.hfd", dir_saida, base_geo);
-    hash_dumpFile(h_hab, path_hfd);
+    hashDumpFile(h_hab, path_hfd);
     snprintf(path_hfd, PATH_LEN, "%s/%s_moradores.hfd",  dir_saida, base_geo);
-    hash_dumpFile(h_mor, path_hfd);
+    hashDumpFile(h_mor, path_hfd);
  
-    hash_closeFile(h_quadras);
-    hash_closeFile(h_hab);
-    hash_closeFile(h_mor);
+    hashCloseFile(h_quadras);
+    hashCloseFile(h_hab);
+    hashCloseFile(h_mor);
  
     return 0;
 }
