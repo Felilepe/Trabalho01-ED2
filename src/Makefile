@@ -7,9 +7,9 @@ CFLAGS  = -ggdb -O0 -std=c99 -fstack-protector-all \
           -I$(SRC_DIR) -I$(UNITY_DIR)
 LDFLAGS = -O0
 
-SRC_DIR   = src
+SRC_DIR   = .
 TST_DIR   = tst
-UNITY_DIR = unity
+UNITY_DIR = .
 
 # ── Módulos do projeto ──────────────────────────────────────────────
 MODULOS = quadra habitante morador lista hte svg parse_geo parse_pm parse_qry
@@ -85,8 +85,39 @@ t_morador: $(TST_DIR)/t_morador.c $(SRC_DIR)/morador.o
 	$(CC) $(CFLAGS) $^ $(UNITY_OBJ) -o $(TST_DIR)/t_morador
 	$(TST_DIR)/t_morador
 
-# ── Roda todos os testes ─────────────────────────────────────────────
-tstall: t_hte t_quadra t_lista t_habitante t_morador
+# ── parse_geo ───────────────────────────────────────────────────────
+t_parse_geo: $(TST_DIR)/t_parse_geo.c $(SRC_DIR)/parse_geo.o \
+             $(SRC_DIR)/hte.o $(SRC_DIR)/quadra.o $(SRC_DIR)/svg.o
+	$(CC) $(CFLAGS) $^ $(UNITY_OBJ) -o $(TST_DIR)/t_parse_geo
+	$(TST_DIR)/t_parse_geo
+
+# ── parse_pm ────────────────────────────────────────────────────────
+t_parse_pm: $(TST_DIR)/t_parse_pm.c $(SRC_DIR)/parse_pm.o \
+            $(SRC_DIR)/hte.o $(SRC_DIR)/habitante.o $(SRC_DIR)/morador.o
+	$(CC) $(CFLAGS) $^ $(UNITY_OBJ) -o $(TST_DIR)/t_parse_pm
+	$(TST_DIR)/t_parse_pm
+
+# ── svg ─────────────────────────────────────────────────────────────
+t_svg: $(TST_DIR)/t_svg.c $(SRC_DIR)/svg.o $(SRC_DIR)/quadra.o \
+       $(SRC_DIR)/lista.o
+	$(CC) $(CFLAGS) $^ $(UNITY_OBJ) -o $(TST_DIR)/t_svg
+	$(TST_DIR)/t_svg
+
+# ── parse_qry ───────────────────────────────────────────────────────
+t_parse_qry: $(TST_DIR)/t_parse_qry.c $(SRC_DIR)/parse_qry.o \
+             $(SRC_DIR)/parse_geo.o $(SRC_DIR)/parse_pm.o \
+             $(SRC_DIR)/hte.o $(SRC_DIR)/quadra.o $(SRC_DIR)/svg.o
+	$(CC) $(CFLAGS) $^ $(UNITY_OBJ) -o $(TST_DIR)/t_parse_qry
+	$(TST_DIR)/t_parse_qry
+
+# ── Agregador de testes (roda todos em uma chamada) ──────────────────
+tests: $(TST_DIR)/test_runner.c $(OBJETOS)
+	$(CC) $(CFLAGS) $^ $(UNITY_OBJ) -o $(TST_DIR)/test_runner
+	$(TST_DIR)/test_runner
+
+# ── Roda todos os testes individualmente ──────────────────────────────
+tstall: t_hte t_quadra t_lista t_habitante t_morador t_parse_geo \
+        t_parse_pm t_svg t_parse_qry
 
 # ════════════════════════════════════════════════════════════════════
 # Limpeza
@@ -94,6 +125,10 @@ tstall: t_hte t_quadra t_lista t_habitante t_morador
 clean:
 	rm -f $(OBJETOS) $(SRC_DIR)/$(PROJ_NAME)
 	rm -f $(TST_DIR)/t_hte $(TST_DIR)/t_quadra $(TST_DIR)/t_lista \
-	      $(TST_DIR)/t_habitante $(TST_DIR)/t_morador
+	      $(TST_DIR)/t_habitante $(TST_DIR)/t_morador \
+	      $(TST_DIR)/t_parse_geo $(TST_DIR)/t_parse_pm \
+	      $(TST_DIR)/t_svg $(TST_DIR)/t_parse_qry \
+	      $(TST_DIR)/test_runner
 
-.PHONY: ted tstall t_hte t_quadra t_lista t_habitante t_morador clean
+.PHONY: ted tstall tests t_hte t_quadra t_lista t_habitante t_morador \
+        t_parse_geo t_parse_pm t_svg t_parse_qry clean
