@@ -22,7 +22,7 @@ static void insert_text(FILE *file_name, double x, double y, char* texto, char *
 static void insert_square(FILE *file_name, double x, double y, double w, double h, char* corpreench, char* corborda)
 {
     fprintf(file_name, "\t<rect x=\"%lf\" y=\"%lf\" width=\"%lf\" height=\"%lf\" stroke=\"%s\" fill=\"%s\" opacity=\"%lf\" stroke-width=\"%lf\" />\n",
-	    x, y, w, h, corpreench, corborda, OPACITY, DEFAULT_WIDTH);
+	    x, y, w, h, corborda, corpreench, OPACITY, DEFAULT_WIDTH);
 }
 
 static void insert_circle(FILE *file_name, double x, double y, double r, char* corpreench, char* corborda)

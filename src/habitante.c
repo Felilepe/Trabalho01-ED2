@@ -137,6 +137,7 @@ void habitanteDestroy(habitante h)
     free(hab -> nome);
     free(hab -> sobrenome);
     free(hab -> nascimento);
+    free(hab -> cpf);
     free(hab);
 
 }

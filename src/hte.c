@@ -262,7 +262,7 @@ bool hashInsertReg(Hash h, char *key, int value)
  
     /* Bucket cheio: divide e reinsere */
     split_bucket(dir, index, &cur, offset);
-    return hash_insertReg(h, key, value);
+    return hashInsertReg(h, key, value);
 }
  
 bool hashRemoveReg(Hash h, char *key)
