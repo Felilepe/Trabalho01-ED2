@@ -78,6 +78,7 @@ char* habitanteGetNascimento(habitante h){return ((Habitante*)h) -> nascimento;}
 
 void habitanteSetCpf(habitante h, char* cpf)
 {
+    if (h == NULL || cpf == NULL) return;
     Habitante *hab = (Habitante*)h;
     free(hab -> cpf);
     hab -> cpf = malloc(strlen(cpf) + 1);
@@ -90,6 +91,7 @@ void habitanteSetCpf(habitante h, char* cpf)
 
 void habitanteSetNome(habitante h, char* nome)
 {
+    if (h == NULL || nome == NULL) return;
     Habitante *hab = (Habitante*)h;
     free(hab -> nome);
     hab -> nome = malloc(strlen(nome) + 1);
@@ -102,6 +104,7 @@ void habitanteSetNome(habitante h, char* nome)
 
 void habitanteSetSobrenome(habitante h, char* sobrenome)
 {
+    if (h == NULL || sobrenome == NULL) return;
     Habitante *hab = (Habitante*)h;
     free(hab -> sobrenome);
     hab -> sobrenome = malloc(strlen(sobrenome) + 1);
@@ -119,6 +122,7 @@ void habitanteSetSexo(habitante h, char sexo)
 
 void habitanteSetNascimento(habitante h, char* nascimento)
 {
+    if (h == NULL || nascimento == NULL) return;
     Habitante *hab = (Habitante*)h;
     free(hab -> nascimento);
     hab -> nascimento = malloc(strlen(nascimento) + 1);
