@@ -70,6 +70,7 @@ int moradorGetNumero(Morador m){return ((morador*)m) -> num;}
 
 void moradorSetCpf(Morador m, char* cpf)
 {
+    if (m == NULL || cpf == NULL) return;
     morador *hab = (morador*)m;
     free(hab -> cpf);
     hab -> cpf = (char*)malloc(strlen(cpf) + 1);
@@ -82,6 +83,7 @@ void moradorSetCpf(Morador m, char* cpf)
 
 void moradorSetCep(Morador m, char* cep)
 {
+    if (m == NULL || cep == NULL) return;
     morador *hab = (morador*)m;
     free(hab -> cep);
     hab -> cep = (char*)malloc(strlen(cep) + 1);
@@ -94,6 +96,7 @@ void moradorSetCep(Morador m, char* cep)
 
 void moradorSetComplemento(Morador m, char* complemento)
 {
+    if (m == NULL || complemento == NULL) return;
     morador *hab = (morador*)m;
     free(hab -> comp);
     hab -> comp = (char*)malloc(strlen(complemento) + 1);
