@@ -104,6 +104,7 @@ void quadraSetBordaWidth(Quadra r, double sw) {((quadra*)r) -> sw = sw;}
 
 void quadraSetCorBorda(Quadra r, char* corborda)
 {
+    if (r == NULL || corborda == NULL) return;
     quadra *quad = (quadra*)r;
     free(quad -> corborda);
     quad -> corborda = (char*)malloc(strlen(corborda) + 1);
@@ -116,6 +117,7 @@ void quadraSetCorBorda(Quadra r, char* corborda)
 
 void quadraSetCorPreench(Quadra r, char* corpreench)
 {
+    if (r == NULL || corpreench == NULL) return;
     quadra *quad = (quadra*)r;
     free(quad -> corpreench);
     quad -> corpreench = (char*)malloc(strlen(corpreench) + 1);
@@ -130,6 +132,7 @@ void quadraSetCorPreench(Quadra r, char* corpreench)
 
 void quadraDestroy(Quadra r)
 {
+    if (r == NULL) return;
     free(((quadra*)r) -> cep);    
     free(((quadra*)r) -> corborda);
     free(((quadra*)r) -> corpreench);

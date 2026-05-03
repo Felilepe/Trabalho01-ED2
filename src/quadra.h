@@ -1,5 +1,5 @@
-#ifndef RETANGULO_H
-#define RETANGULO_H
+#ifndef QUADRA_H
+#define QUADRA_H
 
 
 typedef void* Quadra;
