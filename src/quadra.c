@@ -121,8 +121,7 @@ void quadraSetCorPreench(Quadra r, char* corpreench)
     quadra *quad = (quadra*)r;
     free(quad -> corpreench);
     quad -> corpreench = (char*)malloc(strlen(corpreench) + 1);
-    if(quad -> corpreench == NULL)
-    {
+    if(quad -> corpreench == NULL){
         printf("Erro: falha ao alocar memoria para cor de preenchimento em quadraSetCorPreench\n");
         return;
     }
