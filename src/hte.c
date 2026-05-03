@@ -397,6 +397,45 @@ void hash_dumpFile(Hash h, const char *filename)
  
     fclose(out);
 }
+
+void hash_forEach(Hash h,
+                  void (*cb)(char *key, void *data, size_t data_size, void *aux),
+                  void *aux)
+{
+    if (h == NULL || cb == NULL) return;
+
+    hte_directory *dir = (hte_directory *)h;
+
+    /* Registra quais offsets já foram visitados para não processar
+       o mesmo bucket duas vezes (vários slots do diretório podem
+       apontar para o mesmo bucket após um split). */
+    long visited[1 << 16];
+    int  n_visited = 0;
+
+    for (size_t i = 0; i < dir->directory_size; i++) {
+        long off = dir->bucket_offsets[i];
+
+        /* Pula se já visitou este bucket */
+        bool already = false;
+        for (int v = 0; v < n_visited; v++) {
+            if (visited[v] == off) { already = true; break; }
+        }
+        if (already) continue;
+        visited[n_visited++] = off;
+
+        bucket cur;
+        fseek(dir->disk_file, off, SEEK_SET);
+        if (fread(&cur, sizeof(bucket), 1, dir->disk_file) != 1) continue;
+
+        for (int j = 0; j < RECORDS_PER_BUCKET; j++) {
+            if (cur.records[j].is_occupied)
+                cb(cur.records[j].key,
+                   cur.records[j].data,
+                   cur.records[j].data_size,
+                   aux);
+        }
+    }
+}
  
 void hash_closeFile(Hash h)
 {
