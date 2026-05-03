@@ -24,7 +24,7 @@ Quadra quadraCreate(char* cep, double x, double y, double w, double h)
     quadra *ret= malloc(sizeof(quadra));
     if(ret == NULL){
         printf("Erro: falha ao alocar memoria para ponteiro em quadraCreate\n");
-        exit(1);
+        return NULL;
     }
     
     ret -> cep = (char*)malloc(strlen(cep) + 1);

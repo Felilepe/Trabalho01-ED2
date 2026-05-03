@@ -23,7 +23,7 @@ Lista *lista_create()
     Lista *l = (Lista*)malloc(sizeof(Lista));
     if(l == NULL){
         printf("Erro na alocacao de memoria ao criar lista.");
-        exit(1);
+        return NULL;
     }
     
     l->head = NULL;
@@ -80,7 +80,7 @@ item lista_getHead(Lista *l)
 {
     if(lista_isEmpty(l)){
         printf("Erro: Tentativa de acesso ao head de lista vazia.");
-        exit(1);
+        return NULL;
     }
     return l->head->data;
 }
@@ -89,7 +89,7 @@ item lista_getTail(Lista *l)
 {
     if(lista_isEmpty(l)){
         printf("Erro: Tentativa de acesso ao tail de lista vazia.");
-        exit(1);
+        return NULL;
     }
     return l->tail->data;
 }
@@ -98,12 +98,12 @@ item lista_getItem(Lista *l, int index)
 {
     if(l == NULL || lista_isEmpty(l)){
         printf("Erro: Tentativa de acesso a lista vazia ou nula em lista_getItem.");
-        exit(1);
+        return NULL;
     }
 
     if(index < 0 || index >= l->size){
         printf("Erro: Indice %d invalido. A lista possui indices de 0 a %d.", index, l->size - 1);
-        exit(1);
+        return NULL;
     }
 
     NodeL *atual;
@@ -128,12 +128,12 @@ void lista_removeNode(Lista *l, int index)
 {
     if(l == NULL || lista_isEmpty(l)){
         printf("Erro: Tentativa de acesso a lista vazia ou nula em lista_removeNode.");
-        exit(1);
+        return;
     }
 
     if(index < 0 || index >= l->size){
         printf("Erro: Indice %d invalido. A lista possui indices de 0 a %d.", index, l->size - 1);
-        exit(1);
+        return;
     }
 
     NodeL *atual;
@@ -177,7 +177,7 @@ void lista_insertHead(Lista *l, item i)
     NodeL *novoNode = (NodeL*)malloc(sizeof(NodeL));
     if(novoNode == NULL){
         printf("Erro na alocacao de memoria ao criar novo no para lista.");
-        exit(1);
+        return;
     }
     
     novoNode->data = i;
@@ -199,7 +199,7 @@ void lista_insertTail(Lista *l, item i)
     NodeL *novoNode = (NodeL*)malloc(sizeof(NodeL));
     if(novoNode == NULL){
         printf("Erro na alocacao de memoria ao criar novo no para lista.");
-        exit(1);
+        return;
     }
     
     novoNode->data = i;
@@ -220,7 +220,7 @@ void lista_removeHead(Lista *l)
 {
     if(lista_isEmpty(l)){
         printf("Erro: Tentativa de remocao de lista vazia.");
-        exit(1);
+        return;
     }
 
     NodeL *nodeRemover = l->head;
@@ -241,7 +241,7 @@ void lista_removeTail(Lista *l)
 {
     if(lista_isEmpty(l)){
         printf("Erro: Tentativa de remocao de lista vazia.");
-        exit(1);
+        return;
     }
 
     NodeL *nodeRemover = l->tail;
