@@ -1,46 +1,46 @@
-#include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
+#include <stdio.h>
 #include <stdint.h>
 #include "hte.h"
-
+ 
 #define RECORDS_PER_BUCKET  50
-#define MAX_KEY_LENGTH      32   // 31 caracteres úteis + '\0'
+#define MAX_KEY_LENGTH      32   
 #define MAX_PATH_LENGTH     512
-
+ 
 
 
 typedef struct {
-    char key[MAX_KEY_LENGTH];
-    int  value;
-    bool is_occupied;
+    char   key[MAX_KEY_LENGTH];
+    char   data[MAX_DATA_SIZE];
+    size_t data_size;            
+    bool   is_occupied;
 } record;
-
+ 
 typedef struct {
     int    local_depth;
     int    record_count;
     record records[RECORDS_PER_BUCKET];
 } bucket;
-
+ 
 typedef struct {
     FILE   *disk_file;
-    char    hf_filename[MAX_PATH_LENGTH];   //"quadras.hf"
-    char    hfc_filename[MAX_PATH_LENGTH];  //"quadras.hfc"
+    char    hf_filename[MAX_PATH_LENGTH];
+    char    hfc_filename[MAX_PATH_LENGTH];
     int     global_depth;
     size_t  directory_size;
     long   *bucket_offsets;
-    int     total_expansions;   
+    int     total_expansions;
 } hte_directory;
-
-
-
-
+ 
+//Funções privadas
+ 
 static void build_aux_name(const char *base, const char *ext,
                             char *out, size_t out_max)
 {
-    const char *dot = strrchr(base, '.');
-    size_t base_len = (dot != NULL) ? (size_t)(dot - base) : strlen(base);
+    const char *dot  = strrchr(base, '.');
+    size_t base_len  = (dot != NULL) ? (size_t)(dot - base) : strlen(base);
  
     if (base_len > out_max - strlen(ext) - 2)
         base_len = out_max - strlen(ext) - 2;
@@ -58,13 +58,12 @@ static uint32_t hash_function_32(const char *key)
         hash = ((hash << 5) + hash) + c;
     return hash;
 }
-
+  
 static void split_bucket(hte_directory *dir,
                           uint32_t       index,
                           bucket        *old_bucket,
                           long           old_offset)
 {
-    /* ── 1. Dobra o diretorio se necessário ── */
     if (old_bucket->local_depth == dir->global_depth) {
         size_t old_size = dir->directory_size;
  
@@ -80,12 +79,10 @@ static void split_bucket(hte_directory *dir,
         }
         dir->bucket_offsets = tmp;
  
-        /* A segunda metade começa como copia da primeira */
         for (size_t i = 0; i < old_size; i++)
             dir->bucket_offsets[i + old_size] = dir->bucket_offsets[i];
     }
  
-    /* ── 2. Salva os registros atuais e limpa o bucket antigo ── */
     record temp[RECORDS_PER_BUCKET];
     memcpy(temp, old_bucket->records, sizeof(temp));
  
@@ -93,7 +90,6 @@ static void split_bucket(hte_directory *dir,
     for (int i = 0; i < RECORDS_PER_BUCKET; i++)
         old_bucket->records[i].is_occupied = false;
  
-    /* ── 3. Prepara o novo bucket ── */
     bucket new_bucket;
     new_bucket.record_count = 0;
     for (int i = 0; i < RECORDS_PER_BUCKET; i++)
@@ -102,11 +98,9 @@ static void split_bucket(hte_directory *dir,
     old_bucket->local_depth++;
     new_bucket.local_depth = old_bucket->local_depth;
  
-    /* ── 4. Reserva espaço no final do arquivo para o novo bucket ── */
     fseek(dir->disk_file, 0, SEEK_END);
     long new_offset = ftell(dir->disk_file);
  
-    /* ── 5. Redistribui os registros usando o bit de decisão ── */
     uint32_t split_bit = (uint32_t)1 << (old_bucket->local_depth - 1);
  
     for (int i = 0; i < RECORDS_PER_BUCKET; i++) {
@@ -119,7 +113,8 @@ static void split_bucket(hte_directory *dir,
             if (!dst->records[j].is_occupied) {
                 strncpy(dst->records[j].key, temp[i].key, MAX_KEY_LENGTH - 1);
                 dst->records[j].key[MAX_KEY_LENGTH - 1] = '\0';
-                dst->records[j].value       = temp[i].value;
+                memcpy(dst->records[j].data, temp[i].data, MAX_DATA_SIZE);
+                dst->records[j].data_size   = temp[i].data_size;
                 dst->records[j].is_occupied = true;
                 dst->record_count++;
                 break;
@@ -127,28 +122,24 @@ static void split_bucket(hte_directory *dir,
         }
     }
  
-    /* ── 6. Atualiza ponteiros do diretorio ── */
     uint32_t shared_mask = split_bit - 1;
     uint32_t shared_bits = index & shared_mask;
  
     for (size_t i = 0; i < dir->directory_size; i++) {
-        if ((i & shared_mask) == shared_bits) {
+        if ((i & shared_mask) == shared_bits)
             dir->bucket_offsets[i] = (i & split_bit) ? new_offset : old_offset;
-        }
     }
  
-    /* ── 7. Persiste ambos os buckets no disco ── */
     fseek(dir->disk_file, old_offset, SEEK_SET);
     fwrite(old_bucket, sizeof(bucket), 1, dir->disk_file);
  
     fseek(dir->disk_file, new_offset, SEEK_SET);
     fwrite(&new_bucket, sizeof(bucket), 1, dir->disk_file);
 }
-
-
-
-
-Hash hashOpenFile(const char *filename)
+ 
+//API pública
+ 
+Hash hash_openFile(const char *filename)
 {
     if (filename == NULL) return NULL;
  
@@ -190,21 +181,21 @@ Hash hashOpenFile(const char *filename)
         fwrite(&init, sizeof(bucket), 1, f);
  
     } else {
-        /* ── Arquivo existente: carrega diretorio do .hfc ── */
+        /* ── Arquivo existente: carrega diretório do .hfc ── */
         dir->disk_file = f;
  
         FILE *hfc = fopen(dir->hfc_filename, "rb");
         if (hfc == NULL) {
-            fprintf(stderr, "ERRO CRITICO: arquivo de diretorio '%s' nao encontrado\n",
+            fprintf(stderr, "ERRO CRITICO: '%s' nao encontrado\n",
                     dir->hfc_filename);
             free(dir);
             fclose(f);
             return NULL;
         }
  
-        fread(&dir->global_depth,    sizeof(int),    1, hfc);
-        fread(&dir->directory_size,  sizeof(size_t), 1, hfc);
-        fread(&dir->total_expansions,sizeof(int),    1, hfc);
+        fread(&dir->global_depth,     sizeof(int),    1, hfc);
+        fread(&dir->directory_size,   sizeof(size_t), 1, hfc);
+        fread(&dir->total_expansions, sizeof(int),    1, hfc);
  
         dir->bucket_offsets = malloc(dir->directory_size * sizeof(long));
         if (dir->bucket_offsets == NULL) {
@@ -216,12 +207,13 @@ Hash hashOpenFile(const char *filename)
  
     return dir;
 }
-
-bool hashInsertReg(Hash h, char *key, int value)
-{
-    if (h == NULL || key == NULL) return false;
  
-    hte_directory *dir = (hte_directory*)h;
+bool hash_insertReg(Hash h, char *key, void *data, size_t data_size)
+{
+    if (h == NULL || key == NULL || data == NULL) return false;
+    if (data_size == 0 || data_size > MAX_DATA_SIZE)       return false;
+ 
+    hte_directory *dir = (hte_directory *)h;
  
     uint32_t hash_val = hash_function_32(key);
     uint32_t mask     = (dir->global_depth == 0) ? 0
@@ -237,7 +229,8 @@ bool hashInsertReg(Hash h, char *key, int value)
     for (int i = 0; i < RECORDS_PER_BUCKET; i++) {
         if (cur.records[i].is_occupied &&
             strncmp(cur.records[i].key, key, MAX_KEY_LENGTH) == 0) {
-            cur.records[i].value = value;
+            memcpy(cur.records[i].data, data, data_size);
+            cur.records[i].data_size = data_size;
             fseek(dir->disk_file, offset, SEEK_SET);
             fwrite(&cur, sizeof(bucket), 1, dir->disk_file);
             return true;
@@ -250,7 +243,8 @@ bool hashInsertReg(Hash h, char *key, int value)
             if (!cur.records[i].is_occupied) {
                 strncpy(cur.records[i].key, key, MAX_KEY_LENGTH - 1);
                 cur.records[i].key[MAX_KEY_LENGTH - 1] = '\0';
-                cur.records[i].value       = value;
+                memcpy(cur.records[i].data, data, data_size);
+                cur.records[i].data_size   = data_size;
                 cur.records[i].is_occupied = true;
                 cur.record_count++;
                 fseek(dir->disk_file, offset, SEEK_SET);
@@ -262,20 +256,19 @@ bool hashInsertReg(Hash h, char *key, int value)
  
     /* Bucket cheio: divide e reinsere */
     split_bucket(dir, index, &cur, offset);
-    return hashInsertReg(h, key, value);
+    return hash_insertReg(h, key, data, data_size);
 }
  
-bool hashRemoveReg(Hash h, char *key)
+bool hash_removeReg(Hash h, char *key)
 {
     if (h == NULL || key == NULL) return false;
  
-    hte_directory *dir = (hte_directory*)h;
+    hte_directory *dir = (hte_directory *)h;
  
     uint32_t hash_val = hash_function_32(key);
     uint32_t mask     = (dir->global_depth == 0) ? 0
                         : ((uint32_t)1 << dir->global_depth) - 1;
-    uint32_t index    = hash_val & mask;
-    long     offset   = dir->bucket_offsets[index];
+    long     offset   = dir->bucket_offsets[hash_val & mask];
  
     bucket cur;
     fseek(dir->disk_file, offset, SEEK_SET);
@@ -293,13 +286,12 @@ bool hashRemoveReg(Hash h, char *key)
     }
     return false;
 }
-
-
-bool hashExists(Hash h, char *key)
+ 
+bool hash_exists(Hash h, char *key)
 {
     if (h == NULL || key == NULL) return false;
  
-    hte_directory *dir = (hte_directory*)h;
+    hte_directory *dir = (hte_directory *)h;
  
     uint32_t hash_val = hash_function_32(key);
     uint32_t mask     = (dir->global_depth == 0) ? 0
@@ -317,18 +309,45 @@ bool hashExists(Hash h, char *key)
     }
     return false;
 }
-
-int hashGetSize(Hash h)
+ 
+bool hash_getRegistry(Hash h, char *key, void *out, size_t out_size)
+{
+    if (h == NULL || key == NULL || out == NULL) return false;
+ 
+    hte_directory *dir = (hte_directory *)h;
+ 
+    uint32_t hash_val = hash_function_32(key);
+    uint32_t mask     = (dir->global_depth == 0) ? 0
+                        : ((uint32_t)1 << dir->global_depth) - 1;
+    long     offset   = dir->bucket_offsets[hash_val & mask];
+ 
+    bucket cur;
+    fseek(dir->disk_file, offset, SEEK_SET);
+    if (fread(&cur, sizeof(bucket), 1, dir->disk_file) != 1) return false;
+ 
+    for (int i = 0; i < RECORDS_PER_BUCKET; i++) {
+        if (cur.records[i].is_occupied &&
+            strncmp(cur.records[i].key, key, MAX_KEY_LENGTH) == 0) {
+            size_t copy_size = cur.records[i].data_size < out_size
+                               ? cur.records[i].data_size : out_size;
+            memcpy(out, cur.records[i].data, copy_size);
+            return true;
+        }
+    }
+    return false;
+}
+ 
+int hash_getSize(Hash h)
 {
     if (h == NULL) return -1;
-    return (int)((hte_directory*)h)->directory_size;
+    return (int)((hte_directory *)h)->directory_size;
 }
-
-void hashDumpFile(Hash h, const char *filename)
+ 
+void hash_dumpFile(Hash h, const char *filename)
 {
     if (h == NULL || filename == NULL) return;
  
-    hte_directory *dir = (hte_directory*)h;
+    hte_directory *dir = (hte_directory *)h;
  
     FILE *out = fopen(filename, "w");
     if (out == NULL) {
@@ -341,15 +360,14 @@ void hashDumpFile(Hash h, const char *filename)
     fprintf(out, "Tamanho do diretorio: %zu entradas\n", dir->directory_size);
     fprintf(out, "Total de expansoes  : %d\n\n", dir->total_expansions);
  
-
+    fprintf(out, "--- Entradas do Diretorio ---\n");
+    for (size_t i = 0; i < dir->directory_size; i++)
+        fprintf(out, "  dir[%3zu] -> offset %ld\n", i, dir->bucket_offsets[i]);
+    fprintf(out, "\n");
+ 
+    /* Imprime cada bucket único apenas uma vez */
     long visited[1 << 16];
     int  n_visited = 0;
- 
-    fprintf(out, "--- Entradas do Diretorio ---\n");
-    for (size_t i = 0; i < dir->directory_size; i++) {
-        fprintf(out, "  dir[%3zu] -> offset %ld\n", i, dir->bucket_offsets[i]);
-    }
-    fprintf(out, "\n");
  
     fprintf(out, "--- Conteudo dos Buckets ---\n");
     for (size_t i = 0; i < dir->directory_size; i++) {
@@ -371,36 +389,34 @@ void hashDumpFile(Hash h, const char *filename)
  
         for (int j = 0; j < RECORDS_PER_BUCKET; j++) {
             if (cur.records[j].is_occupied)
-                fprintf(out, "    [%2d] chave=\"%s\" valor=%d\n",
-                        j, cur.records[j].key, cur.records[j].value);
+                fprintf(out, "    [%2d] chave=\"%s\" | %zu bytes de dados\n",
+                        j, cur.records[j].key, cur.records[j].data_size);
         }
         fprintf(out, "\n");
     }
  
     fclose(out);
 }
-
-void hashCloseFile(Hash h)
+ 
+void hash_closeFile(Hash h)
 {
     if (h == NULL) return;
  
-    hte_directory *dir = (hte_directory*)h;
+    hte_directory *dir = (hte_directory *)h;
  
-    /* Persiste o diretorio no arquivo .hfc */
     FILE *hfc = fopen(dir->hfc_filename, "wb");
     if (hfc != NULL) {
-        fwrite(&dir->global_depth,    sizeof(int),    1, hfc);
-        fwrite(&dir->directory_size,  sizeof(size_t), 1, hfc);
-        fwrite(&dir->total_expansions,sizeof(int),    1, hfc);
+        fwrite(&dir->global_depth,     sizeof(int),    1, hfc);
+        fwrite(&dir->directory_size,   sizeof(size_t), 1, hfc);
+        fwrite(&dir->total_expansions, sizeof(int),    1, hfc);
         fwrite(dir->bucket_offsets, sizeof(long), dir->directory_size, hfc);
         fclose(hfc);
     } else {
-        fprintf(stderr, "ERRO CRITICO: nao foi possivel salvar diretorio em '%s'\n",
+        fprintf(stderr, "ERRO CRITICO: nao foi possivel salvar '%s'\n",
                 dir->hfc_filename);
     }
  
-    if (dir->disk_file    != NULL) fclose(dir->disk_file);
+    if (dir->disk_file     != NULL) fclose(dir->disk_file);
     if (dir->bucket_offsets != NULL) free(dir->bucket_offsets);
     free(dir);
 }
-
