@@ -45,7 +45,7 @@ FILE* startSVG(const char* file_path) {
 	FILE* svg = fopen(file_path, "w");
 	if (svg == NULL) {
 		perror("Erro: Arquivo NULL.");
-		exit(1);
+		return NULL;
 	}
 
      fprintf(svg, "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");

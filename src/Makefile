@@ -84,13 +84,15 @@ t_morador: $(TST_DIR)/t_morador.c $(SRC_DIR)/morador.o
 
 # ── parse_geo ───────────────────────────────────────────────────────
 t_parse_geo: $(TST_DIR)/t_parse_geo.c $(SRC_DIR)/parse_geo.o \
-             $(SRC_DIR)/hte.o $(SRC_DIR)/quadra.o $(SRC_DIR)/svg.o
+             $(SRC_DIR)/hte.o $(SRC_DIR)/quadra.o $(SRC_DIR)/svg.o \
+             $(SRC_DIR)/lista.o
 	$(CC) $(CFLAGS) $^ $(UNITY_OBJ) -o $(TST_DIR)/t_parse_geo
 	$(TST_DIR)/t_parse_geo
 
 # ── parse_pm ────────────────────────────────────────────────────────
 t_parse_pm: $(TST_DIR)/t_parse_pm.c $(SRC_DIR)/parse_pm.o \
             $(SRC_DIR)/hte.o $(SRC_DIR)/habitante.o $(SRC_DIR)/morador.o
+			$(SRC_DIR)/lista.o  
 	$(CC) $(CFLAGS) $^ $(UNITY_OBJ) -o $(TST_DIR)/t_parse_pm
 	$(TST_DIR)/t_parse_pm
 
@@ -127,5 +129,5 @@ clean:
 	      $(TST_DIR)/t_svg $(TST_DIR)/t_parse_qry \
 	      $(TST_DIR)/test_runner
 
-.PHONY: ted tstall tests t_hte t_quadra t_lista t_habitante t_morador \
+.PHONY: tstall tests t_hte t_quadra t_lista t_habitante t_morador \
         t_parse_geo t_parse_pm t_svg t_parse_qry clean

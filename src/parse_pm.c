@@ -61,10 +61,11 @@ static void processar_m(const char *linha, Hash h_mor)
                        &reg.num,
                        reg.complemento);
  
-    if (lidos != 5) {
-        fprintf(stderr, "AVISO: linha 'm' malformada: %s", linha);
-        return;
+    if (lidos < 4) {
+    fprintf(stderr, "AVISO: linha 'm' malformada: %s", linha);
+    return;
     }
+    if (lidos == 4) reg.complemento[0] = '\0';
  
     /* "Face.W" -> 'W', "N" -> 'N' */
     char *ponto = strchr(face_str, '.');

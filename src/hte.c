@@ -342,47 +342,51 @@ int hashGetSize(Hash h)
 void hashDumpFile(Hash h, const char *filename)
 {
     if (h == NULL || filename == NULL) return;
- 
+
     hte_directory *dir = (hte_directory *)h;
- 
+
     FILE *out = fopen(filename, "w");
     if (out == NULL) {
         fprintf(stderr, "ERRO: nao foi possivel criar dump '%s'\n", filename);
         return;
     }
- 
+
     fprintf(out, "=== DUMP DO HASHFILE: %s ===\n", dir->hf_filename);
     fprintf(out, "Profundidade global : %d\n", dir->global_depth);
     fprintf(out, "Tamanho do diretorio: %zu entradas\n", dir->directory_size);
     fprintf(out, "Total de expansoes  : %d\n\n", dir->total_expansions);
- 
+
     fprintf(out, "--- Entradas do Diretorio ---\n");
     for (size_t i = 0; i < dir->directory_size; i++)
         fprintf(out, "  dir[%3zu] -> offset %ld\n", i, dir->bucket_offsets[i]);
     fprintf(out, "\n");
- 
-    /* Imprime cada bucket único apenas uma vez */
-    long visited[1 << 16];
-    int  n_visited = 0;
- 
+
+    long *visited = malloc(dir->directory_size * sizeof(long));
+    if (visited == NULL) {
+        fprintf(stderr, "ERRO: falha de malloc em hashDumpFile\n");
+        fclose(out);
+        return;
+    }
+    int n_visited = 0;
+
     fprintf(out, "--- Conteudo dos Buckets ---\n");
     for (size_t i = 0; i < dir->directory_size; i++) {
         long off = dir->bucket_offsets[i];
- 
+
         bool already = false;
         for (int v = 0; v < n_visited; v++) {
             if (visited[v] == off) { already = true; break; }
         }
         if (already) continue;
         visited[n_visited++] = off;
- 
+
         bucket cur;
         fseek(dir->disk_file, off, SEEK_SET);
         if (fread(&cur, sizeof(bucket), 1, dir->disk_file) != 1) continue;
- 
+
         fprintf(out, "Bucket @ offset %ld | prof_local=%d | registros=%d/%d\n",
                 off, cur.local_depth, cur.record_count, RECORDS_PER_BUCKET);
- 
+
         for (int j = 0; j < RECORDS_PER_BUCKET; j++) {
             if (cur.records[j].is_occupied)
                 fprintf(out, "    [%2d] chave=\"%s\" | %zu bytes de dados\n",
@@ -390,28 +394,27 @@ void hashDumpFile(Hash h, const char *filename)
         }
         fprintf(out, "\n");
     }
- 
+
+    free(visited);
     fclose(out);
 }
 
-void hashForEach(Hash h,
-                  void (*cb)(char *key, void *data, size_t data_size, void *aux),
-                  void *aux)
+void hashForEach(Hash h, void (*cb)(char *key, void *data, size_t data_size, void *aux), void *aux)
 {
     if (h == NULL || cb == NULL) return;
 
     hte_directory *dir = (hte_directory *)h;
 
-    /* Registra quais offsets já foram visitados para não processar
-       o mesmo bucket duas vezes (vários slots do diretório podem
-       apontar para o mesmo bucket após um split). */
-    long visited[1 << 16];
-    int  n_visited = 0;
+    long *visited = malloc(dir->directory_size * sizeof(long));
+    if (visited == NULL) {
+        fprintf(stderr, "ERRO: falha de malloc em hashForEach\n");
+        return;
+    }
+    int n_visited = 0;
 
     for (size_t i = 0; i < dir->directory_size; i++) {
         long off = dir->bucket_offsets[i];
 
-        /* Pula se já visitou este bucket */
         bool already = false;
         for (int v = 0; v < n_visited; v++) {
             if (visited[v] == off) { already = true; break; }
@@ -431,6 +434,8 @@ void hashForEach(Hash h,
                    aux);
         }
     }
+
+    free(visited);
 }
  
 void hashCloseFile(Hash h)

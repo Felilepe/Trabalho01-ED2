@@ -15,7 +15,11 @@
 #define MAX_NOME    50
 #define MAX_COMP    50
 
-/* ─── Structs de disco (espelham as de parse_pm/parse_geo, privadas) */
+/*
+ * ATENCAO (Bug 2): QuadraReg, HabitanteReg e MoradorReg sao definidas
+ * tambem em parse_geo.c e parse_pm.c. Idealmente deveriam estar em um
+ * unico header compartilhado (ex: registros.h) para evitar dessincronizacao.
+ */
 
 typedef struct {
     char   cep[MAX_CEP];
@@ -43,17 +47,17 @@ typedef struct {
 /* ─── Helpers de posicionamento ──────────────────────────────────── */
 
 /*
- * Calcula a posição SVG aproximada de uma casa dado o endereço.
- * O ponto de ancoragem é o canto sudeste da quadra, ou seja,
+ * Calcula a posicao SVG aproximada de uma casa dado o endereco.
+ * O ponto de ancoragem e o canto sudeste da quadra, ou seja,
  * (x + w, y + h) no sistema SVG (y cresce para baixo).
- * O número é a distância a partir da âncora ao longo da face.
+ * O numero e a distancia a partir da ancora ao longo da face.
  */
 static void calcPosEndereco(double qx, double qy, double qw, double qh,
                              char face, int num,
                              double *px, double *py)
 {
-    double ax = qx + qw;   /* âncora X — canto sudeste */
-    double ay = qy + qh;   /* âncora Y — canto sudeste */
+    double ax = qx + qw;   /* ancora X — canto sudeste */
+    double ay = qy + qh;   /* ancora Y — canto sudeste */
 
     switch (face) {
         case 'S': *px = ax - num; *py = ay;       break; /* face sul   */
@@ -64,7 +68,7 @@ static void calcPosEndereco(double qx, double qy, double qw, double qh,
     }
 }
 
-/* Cria um Quadra temporário a partir de uma QuadraReg para uso no SVG */
+/* Cria um Quadra temporario a partir de uma QuadraReg para uso no SVG */
 static Quadra quadraFromReg(QuadraReg *reg)
 {
     return quadraCreate(reg->cep, reg->x, reg->y, reg->w, reg->h);
@@ -78,10 +82,16 @@ typedef struct {
     int  total;
 } ContFaceAux;
 
+/*
+ * FIX Bug 3: substituido array fixo de 256 CPFs por array dinamico.
+ * O campo 'cpfs' agora e um vetor de ponteiros alocado com malloc/realloc,
+ * evitando perda silenciosa de moradores alem do limite anterior.
+ */
 typedef struct {
-    char   cep[MAX_CEP];
-    char   cpfs[256][MAX_CPF]; /* CPFs encontrados            */
+    char  cep[MAX_CEP];
+    char **cpfs;      /* array dinamico de strings */
     int    count;
+    int    capacity;
 } MoradoresCepAux;
 
 typedef struct {
@@ -91,7 +101,7 @@ typedef struct {
     int mulheres;
     int mor_homens;
     int mor_mulheres;
-    Hash h_mor;           /* para checar se é morador     */
+    Hash h_mor;           /* para checar se e morador     */
 } CensoAux;
 
 /* ─── Callbacks para hashForEach ───────────────────────────────── */
@@ -113,6 +123,7 @@ static void cb_contar_face(char *key, void *data, size_t data_size, void *aux)
     }
 }
 
+/* FIX Bug 3: callback agora cresce o array dinamicamente via realloc. */
 static void cb_coletar_moradores_cep(char *key, void *data, size_t data_size, void *aux)
 {
     (void)data_size;
@@ -120,7 +131,24 @@ static void cb_coletar_moradores_cep(char *key, void *data, size_t data_size, vo
     MoradoresCepAux *ctx = (MoradoresCepAux *)aux;
 
     if (strncmp(m->cep, ctx->cep, MAX_CEP) != 0) return;
-    if (ctx->count >= 256) return;
+
+    /* Cresce o array se necessario */
+    if (ctx->count == ctx->capacity) {
+        int nova_cap = ctx->capacity * 2;
+        char **tmp = realloc(ctx->cpfs, nova_cap * sizeof(char *));
+        if (tmp == NULL) {
+            fprintf(stderr, "ERRO: falha de realloc em cb_coletar_moradores_cep\n");
+            return;
+        }
+        ctx->cpfs     = tmp;
+        ctx->capacity = nova_cap;
+    }
+
+    ctx->cpfs[ctx->count] = malloc(MAX_CPF);
+    if (ctx->cpfs[ctx->count] == NULL) {
+        fprintf(stderr, "ERRO: falha de malloc em cb_coletar_moradores_cep\n");
+        return;
+    }
 
     strncpy(ctx->cpfs[ctx->count], key, MAX_CPF - 1);
     ctx->cpfs[ctx->count][MAX_CPF - 1] = '\0';
@@ -145,7 +173,7 @@ static void cb_censo_habitantes(char *key, void *data, size_t data_size, void *a
     }
 }
 
-/* ─── Implementação de cada comando ─────────────────────────────── */
+/* ─── Implementacao de cada comando ─────────────────────────────── */
 
 static void processar_rq(const char *linha, Hash h_quadras, Hash h_hab, Hash h_mor, FILE *svg, FILE *txt)
 {
@@ -164,13 +192,24 @@ static void processar_rq(const char *linha, Hash h_quadras, Hash h_hab, Hash h_m
         return;
     }
 
-    /* Coleta todos os moradores da quadra */
+    /*
+     * FIX Bug 3: MoradoresCepAux agora usa array dinamico.
+     * Inicializa com capacidade 16 e dobra conforme necessario.
+     * Todos os CPFs coletados sao liberados apos o uso.
+     */
     MoradoresCepAux ctx;
     strncpy(ctx.cep, cep, MAX_CEP);
-    ctx.count = 0;
+    ctx.count    = 0;
+    ctx.capacity = 16;
+    ctx.cpfs     = malloc(ctx.capacity * sizeof(char *));
+    if (ctx.cpfs == NULL) {
+        fprintf(stderr, "ERRO: falha de malloc em processar_rq\n");
+        return;
+    }
+
     hashForEach(h_mor, cb_coletar_moradores_cep, &ctx);
 
-    /* TXT: CPF e nome de cada morador que perde o endereço */
+    /* TXT: CPF e nome de cada morador que perde o endereco */
     for (int i = 0; i < ctx.count; i++) {
         HabitanteReg hreg;
         if (hashGetRegistry(h_hab, ctx.cpfs[i], &hreg, sizeof(HabitanteReg)))
@@ -180,7 +219,12 @@ static void processar_rq(const char *linha, Hash h_quadras, Hash h_hab, Hash h_m
         hashRemoveReg(h_mor, ctx.cpfs[i]);
     }
 
-    /* SVG: pequeno X vermelho na âncora da quadra removida */
+    /* Libera o array dinamico */
+    for (int i = 0; i < ctx.count; i++)
+        free(ctx.cpfs[i]);
+    free(ctx.cpfs);
+
+    /* SVG: pequeno X vermelho na ancora da quadra removida */
     double ax = qreg.x + qreg.w;
     double ay = qreg.y + qreg.h;
     svgMarcaRedCross(svg, ax, ay);
@@ -235,27 +279,26 @@ static void processar_censo(Hash h_hab, Hash h_mor, FILE *txt)
     fprintf(txt, "[*] censo\n");
 
     CensoAux ctx;
-    ctx.total_hab  = 0;
-    ctx.total_mor  = 0;
-    ctx.homens     = 0;
-    ctx.mulheres   = 0;
-    ctx.mor_homens = 0;
+    ctx.total_hab    = 0;
+    ctx.total_mor    = 0;
+    ctx.homens       = 0;
+    ctx.mulheres     = 0;
+    ctx.mor_homens   = 0;
     ctx.mor_mulheres = 0;
-    ctx.h_mor      = h_mor;
+    ctx.h_mor        = h_mor;
 
     hashForEach(h_hab, cb_censo_habitantes, &ctx);
 
-    int sem_teto         = ctx.total_hab - ctx.total_mor;
-    int sem_teto_homens  = ctx.homens    - ctx.mor_homens;
-    int sem_teto_mulheres= ctx.mulheres  - ctx.mor_mulheres;
+    int sem_teto          = ctx.total_hab - ctx.total_mor;
+    int sem_teto_homens   = ctx.homens    - ctx.mor_homens;
+    int sem_teto_mulheres = ctx.mulheres  - ctx.mor_mulheres;
 
-    double prop = ctx.total_hab > 0
-                  ? (double)ctx.total_mor / ctx.total_hab * 100.0
-                  : 0.0;
-    double pct_h = ctx.total_hab > 0
-                   ? (double)ctx.homens   / ctx.total_hab * 100.0 : 0.0;
-    double pct_m = ctx.total_hab > 0
-                   ? (double)ctx.mulheres / ctx.total_hab * 100.0 : 0.0;
+    double prop   = ctx.total_hab > 0
+                    ? (double)ctx.total_mor / ctx.total_hab * 100.0 : 0.0;
+    double pct_h  = ctx.total_hab > 0
+                    ? (double)ctx.homens    / ctx.total_hab * 100.0 : 0.0;
+    double pct_m  = ctx.total_hab > 0
+                    ? (double)ctx.mulheres  / ctx.total_hab * 100.0 : 0.0;
     double pct_mh = ctx.total_mor > 0
                     ? (double)ctx.mor_homens   / ctx.total_mor * 100.0 : 0.0;
     double pct_mm = ctx.total_mor > 0
@@ -265,16 +308,16 @@ static void processar_censo(Hash h_hab, Hash h_mor, FILE *txt)
     double pct_sm = sem_teto > 0
                     ? (double)sem_teto_mulheres / sem_teto * 100.0 : 0.0;
 
-    fprintf(txt, "Total de habitantes      : %d\n",   ctx.total_hab);
-    fprintf(txt, "Total de moradores       : %d\n",   ctx.total_mor);
-    fprintf(txt, "Proporcao mor/hab        : %.2f%%\n", prop);
-    fprintf(txt, "Homens                   : %d (%.2f%%)\n", ctx.homens, pct_h);
-    fprintf(txt, "Mulheres                 : %d (%.2f%%)\n", ctx.mulheres, pct_m);
-    fprintf(txt, "Moradores homens         : %d (%.2f%%)\n", ctx.mor_homens,   pct_mh);
-    fprintf(txt, "Moradores mulheres       : %d (%.2f%%)\n", ctx.mor_mulheres, pct_mm);
-    fprintf(txt, "Sem-teto                 : %d\n",   sem_teto);
-    fprintf(txt, "Sem-teto homens          : %d (%.2f%%)\n", sem_teto_homens,   pct_sh);
-    fprintf(txt, "Sem-teto mulheres        : %d (%.2f%%)\n", sem_teto_mulheres, pct_sm);
+    fprintf(txt, "Total de habitantes      : %d\n",           ctx.total_hab);
+    fprintf(txt, "Total de moradores       : %d\n",           ctx.total_mor);
+    fprintf(txt, "Proporcao mor/hab        : %.2f%%\n",        prop);
+    fprintf(txt, "Homens                   : %d (%.2f%%)\n",  ctx.homens,        pct_h);
+    fprintf(txt, "Mulheres                 : %d (%.2f%%)\n",  ctx.mulheres,      pct_m);
+    fprintf(txt, "Moradores homens         : %d (%.2f%%)\n",  ctx.mor_homens,    pct_mh);
+    fprintf(txt, "Moradores mulheres       : %d (%.2f%%)\n",  ctx.mor_mulheres,  pct_mm);
+    fprintf(txt, "Sem-teto                 : %d\n",           sem_teto);
+    fprintf(txt, "Sem-teto homens          : %d (%.2f%%)\n",  sem_teto_homens,   pct_sh);
+    fprintf(txt, "Sem-teto mulheres        : %d (%.2f%%)\n",  sem_teto_mulheres, pct_sm);
 }
 
 static void processar_h(const char *linha,
@@ -294,10 +337,10 @@ static void processar_h(const char *linha,
         return;
     }
 
-    fprintf(txt, "CPF        : %s\n", hreg.cpf);
+    fprintf(txt, "CPF        : %s\n",    hreg.cpf);
     fprintf(txt, "Nome       : %s %s\n", hreg.nome, hreg.sobrenome);
-    fprintf(txt, "Sexo       : %c\n", hreg.sexo);
-    fprintf(txt, "Nascimento : %s\n", hreg.nascimento);
+    fprintf(txt, "Sexo       : %c\n",    hreg.sexo);
+    fprintf(txt, "Nascimento : %s\n",    hreg.nascimento);
 
     MoradorReg mreg;
     if (hashGetRegistry(h_mor, cpf, &mreg, sizeof(MoradorReg))) {
@@ -345,12 +388,12 @@ static void processar_rip(const char *linha,
         return;
     }
 
-    fprintf(txt, "CPF        : %s\n", hreg.cpf);
+    fprintf(txt, "CPF        : %s\n",    hreg.cpf);
     fprintf(txt, "Nome       : %s %s\n", hreg.nome, hreg.sobrenome);
-    fprintf(txt, "Sexo       : %c\n", hreg.sexo);
-    fprintf(txt, "Nascimento : %s\n", hreg.nascimento);
+    fprintf(txt, "Sexo       : %c\n",    hreg.sexo);
+    fprintf(txt, "Nascimento : %s\n",    hreg.nascimento);
 
-    /* Se era morador, reporta endereço e marca no SVG */
+    /* Se era morador, reporta endereco e marca no SVG */
     MoradorReg mreg;
     if (hashGetRegistry(h_mor, cpf, &mreg, sizeof(MoradorReg))) {
         fprintf(txt, "Endereco   : %s / Face.%c / %d / %s\n",
@@ -388,8 +431,15 @@ static void processar_mud(const char *linha,
 
     fprintf(txt, "[*] mud %s\n", cpf);
 
+    /* FIX Bug 1: verifica se o CPF pertence a um habitante conhecido */
     if (!hashExists(h_hab, cpf)) {
         fprintf(txt, "ERRO: habitante '%s' nao encontrado\n", cpf);
+        return;
+    }
+
+    /* FIX Bug 1: verifica se o habitante e de fato um morador */
+    if (!hashExists(h_mor, cpf)) {
+        fprintf(txt, "ERRO: '%s' nao e morador\n", cpf);
         return;
     }
 
@@ -399,7 +449,7 @@ static void processar_mud(const char *linha,
     strncpy(mreg.cep, cep, MAX_CEP - 1); mreg.cep[MAX_CEP - 1] = '\0';
     strncpy(mreg.complemento, comp, MAX_COMP - 1);
     mreg.complemento[MAX_COMP - 1] = '\0';
-    mreg.num  = num;
+    mreg.num = num;
 
     char *ponto = strchr(face_str, '.');
     mreg.face   = ponto ? *(ponto + 1) : face_str[0];
@@ -441,13 +491,13 @@ static void processar_dspj(const char *linha,
         return;
     }
 
-    /* TXT: dados do habitante e endereço do despejo */
-    fprintf(txt, "CPF      : %s\n", hreg.cpf);
+    /* TXT: dados do habitante e endereco do despejo */
+    fprintf(txt, "CPF      : %s\n",    hreg.cpf);
     fprintf(txt, "Nome     : %s %s\n", hreg.nome, hreg.sobrenome);
     fprintf(txt, "Endereco : %s / Face.%c / %d / %s\n",
             mreg.cep, mreg.face, mreg.num, mreg.complemento);
 
-    /* SVG: círculo preto no local do despejo */
+    /* SVG: circulo preto no local do despejo */
     QuadraReg qreg;
     if (hashGetRegistry(h_quadras, mreg.cep, &qreg, sizeof(QuadraReg))) {
         double px, py;
@@ -460,7 +510,7 @@ static void processar_dspj(const char *linha,
     hashRemoveReg(h_mor, cpf);
 }
 
-/* ─── Interface pública ──────────────────────────────────────────── */
+/* ─── Interface publica ──────────────────────────────────────────── */
 
 void parseQry(const char *caminho,
               Hash h_quadras, Hash h_hab, Hash h_mor,
@@ -486,21 +536,21 @@ void parseQry(const char *caminho,
         char cmd[8];
         if (sscanf(linha, "%7s", cmd) != 1) continue;
 
-        if      (strcmp(cmd, "rq")   == 0)
+        if      (strcmp(cmd, "rq")    == 0)
             processar_rq(linha, h_quadras, h_hab, h_mor, svg, txt);
-        else if (strcmp(cmd, "pq")   == 0)
+        else if (strcmp(cmd, "pq")    == 0)
             processar_pq(linha, h_quadras, h_mor, svg, txt);
-        else if (strcmp(cmd, "censo")== 0)
+        else if (strcmp(cmd, "censo") == 0)
             processar_censo(h_hab, h_mor, txt);
-        else if (strcmp(cmd, "h?")   == 0)
+        else if (strcmp(cmd, "h?")    == 0)
             processar_h(linha, h_hab, h_mor, txt);
-        else if (strcmp(cmd, "nasc") == 0)
+        else if (strcmp(cmd, "nasc")  == 0)
             processar_nasc(linha, h_hab);
-        else if (strcmp(cmd, "rip")  == 0)
+        else if (strcmp(cmd, "rip")   == 0)
             processar_rip(linha, h_quadras, h_hab, h_mor, svg, txt);
-        else if (strcmp(cmd, "mud")  == 0)
+        else if (strcmp(cmd, "mud")   == 0)
             processar_mud(linha, h_quadras, h_hab, h_mor, svg, txt);
-        else if (strcmp(cmd, "dspj") == 0)
+        else if (strcmp(cmd, "dspj")  == 0)
             processar_dspj(linha, h_quadras, h_hab, h_mor, svg, txt);
         else
             fprintf(stderr, "AVISO: comando desconhecido em .qry: '%s'\n", cmd);

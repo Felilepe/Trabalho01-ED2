@@ -56,10 +56,13 @@ static void processar_q(const char *linha, Hash h_quadras, FILE *svg)
         return;
     }
 
-    svgInsertQuadra(svg, q);
-    svgMarcaCep(svg, q);
+quadraSetBordaWidth(q, reg.sw);
+quadraSetCorBorda(q,   reg.cstrk);
+quadraSetCorPreench(q, reg.cfill);
+svgInsertQuadra(svg, q);
+svgMarcaCep(svg, q);
+quadraDestroy(q);
 
-    quadraDestroy(q);
 }
 
 static void processar_cq(const char *linha)
