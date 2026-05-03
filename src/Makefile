@@ -20,11 +20,8 @@ OBJETOS = $(patsubst %, $(SRC_DIR)/%.o, $(MODULOS)) $(SRC_DIR)/ted.o
 # Alvo principal
 # ════════════════════════════════════════════════════════════════════
 
-$(SRC_DIR)/$(PROJ_NAME): $(OBJETOS)
+$(PROJ_NAME): $(OBJETOS)
 	$(CC) -o $@ $(LDFLAGS) $(OBJETOS)
-
-# Alias sem prefixo de diretório (para o professor: make ted)
-ted: $(SRC_DIR)/$(PROJ_NAME)
 
 # ── Regra genérica para objetos ──────────────────────────────────────
 $(SRC_DIR)/%.o: $(SRC_DIR)/%.c
