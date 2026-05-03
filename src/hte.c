@@ -36,8 +36,7 @@ typedef struct {
  
 //Funções privadas
  
-static void build_aux_name(const char *base, const char *ext,
-                            char *out, size_t out_max)
+static void build_aux_name(const char *base, const char *ext, char *out, size_t out_max)
 {
     const char *dot  = strrchr(base, '.');
     size_t base_len  = (dot != NULL) ? (size_t)(dot - base) : strlen(base);
@@ -59,10 +58,7 @@ static uint32_t hash_function_32(const char *key)
     return hash;
 }
   
-static void split_bucket(hte_directory *dir,
-                          uint32_t       index,
-                          bucket        *old_bucket,
-                          long           old_offset)
+static void split_bucket(hte_directory *dir, uint32_t index, bucket *old_bucket, long old_offset)
 {
     if (old_bucket->local_depth == dir->global_depth) {
         size_t old_size = dir->directory_size;
@@ -137,9 +133,9 @@ static void split_bucket(hte_directory *dir,
     fwrite(&new_bucket, sizeof(bucket), 1, dir->disk_file);
 }
  
-//API pública
+//Funções pública
  
-Hash hash_openFile(const char *filename)
+Hash hashOpenFile(const char *filename)
 {
     if (filename == NULL) return NULL;
  
@@ -208,7 +204,7 @@ Hash hash_openFile(const char *filename)
     return dir;
 }
  
-bool hash_insertReg(Hash h, char *key, void *data, size_t data_size)
+bool hashInsertReg(Hash h, char *key, void *data, size_t data_size)
 {
     if (h == NULL || key == NULL || data == NULL) return false;
     if (data_size == 0 || data_size > MAX_DATA_SIZE)       return false;
@@ -259,7 +255,7 @@ bool hash_insertReg(Hash h, char *key, void *data, size_t data_size)
     return hash_insertReg(h, key, data, data_size);
 }
  
-bool hash_removeReg(Hash h, char *key)
+bool hashRemoveReg(Hash h, char *key)
 {
     if (h == NULL || key == NULL) return false;
  
@@ -287,7 +283,7 @@ bool hash_removeReg(Hash h, char *key)
     return false;
 }
  
-bool hash_exists(Hash h, char *key)
+bool hashExists(Hash h, char *key)
 {
     if (h == NULL || key == NULL) return false;
  
@@ -310,7 +306,7 @@ bool hash_exists(Hash h, char *key)
     return false;
 }
  
-bool hash_getRegistry(Hash h, char *key, void *out, size_t out_size)
+bool hashGetRegistry(Hash h, char *key, void *out, size_t out_size)
 {
     if (h == NULL || key == NULL || out == NULL) return false;
  
@@ -337,13 +333,13 @@ bool hash_getRegistry(Hash h, char *key, void *out, size_t out_size)
     return false;
 }
  
-int hash_getSize(Hash h)
+int hashGetSize(Hash h)
 {
     if (h == NULL) return -1;
     return (int)((hte_directory *)h)->directory_size;
 }
  
-void hash_dumpFile(Hash h, const char *filename)
+void hashDumpFile(Hash h, const char *filename)
 {
     if (h == NULL || filename == NULL) return;
  
@@ -398,7 +394,7 @@ void hash_dumpFile(Hash h, const char *filename)
     fclose(out);
 }
 
-void hash_forEach(Hash h,
+void hashForEach(Hash h,
                   void (*cb)(char *key, void *data, size_t data_size, void *aux),
                   void *aux)
 {
@@ -437,7 +433,7 @@ void hash_forEach(Hash h,
     }
 }
  
-void hash_closeFile(Hash h)
+void hashCloseFile(Hash h)
 {
     if (h == NULL) return;
  

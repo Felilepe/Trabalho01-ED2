@@ -28,7 +28,7 @@ typedef void *Hash;
  * @param filename Caminho do arquivo principal (ex: "habitantes.hf").
  * @return Ponteiro válido para a estrutura Hash, ou NULL em caso de erro.
  **/
-Hash hash_openFile(const char *filename);
+Hash hashOpenFile(const char *filename);
  
 /**
  * @brief Insere ou atualiza um registro no hashfile.
@@ -40,7 +40,7 @@ Hash hash_openFile(const char *filename);
  * @param data_size Tamanho em bytes dos dados (máx. MAX_DATA_SIZE).
  * @return true se bem-sucedido, false em caso de erro.
  **/
-bool hash_insertReg(Hash h, char *key, void *data, size_t data_size);
+bool hashInsertReg(Hash h, char *key, void *data, size_t data_size);
  
 /**
  * @brief Remove um registro do hashfile com base na chave.
@@ -48,7 +48,7 @@ bool hash_insertReg(Hash h, char *key, void *data, size_t data_size);
  * @param key Chave do registro a remover.
  * @return true se encontrado e removido, false caso contrário.
  **/
-bool hash_removeReg(Hash h, char *key);
+bool hashRemoveReg(Hash h, char *key);
  
 /**
  * @brief Verifica se uma chave existe no hashfile.
@@ -56,7 +56,7 @@ bool hash_removeReg(Hash h, char *key);
  * @param key Chave a procurar.
  * @return true se existe, false caso contrário.
  **/
-bool hash_exists(Hash h, char *key);
+bool hashExists(Hash h, char *key);
  
 /**
  * @brief Recupera os dados associados a uma chave.
@@ -69,21 +69,21 @@ bool hash_exists(Hash h, char *key);
  * @return true se a chave foi encontrada e os dados copiados,
  *         false caso contrário.
  **/
-bool hash_getRegistry(Hash h, char *key, void *out, size_t out_size);
+bool hashGetRegistry(Hash h, char *key, void *out, size_t out_size);
  
 /**
  * @brief Retorna o número de entradas no diretório (potência de 2).
  * @param h Ponteiro para a estrutura Hash.
  * @return Tamanho do diretório, ou -1 em caso de erro.
  **/
-int hash_getSize(Hash h);
+int hashGetSize(Hash h);
  
 /**
  * @brief Gera um arquivo-texto legível (.hfd) com o estado do hashfile.
  * @param h        Ponteiro para a estrutura Hash.
  * @param filename Caminho do arquivo .hfd a ser gerado.
  **/
-void hash_dumpFile(Hash h, const char *filename);
+void hashDumpFile(Hash h, const char *filename);
 
 /**
  * @brief Itera sobre todos os registros do hashfile, chamando o callback
@@ -93,15 +93,14 @@ void hash_dumpFile(Hash h, const char *filename);
  *            para os dados, o tamanho dos dados e o ponteiro auxiliar.
  * @param aux Ponteiro auxiliar repassado a cada chamada do callback.
  **/
-void hash_forEach(Hash h,
+void hashForEach(Hash h,
                   void (*cb)(char *key, void *data, size_t data_size, void *aux),
                   void *aux);
  
 /**
  * @brief Fecha o hashfile, persistindo o diretório em disco.
- *
  * @param h Ponteiro para a estrutura Hash a ser fechada.
  **/
-void hash_closeFile(Hash h);
+void hashCloseFile(Hash h);
  
 #endif
