@@ -70,7 +70,7 @@ static Quadra quadraFromReg(QuadraReg *reg)
     return quadraCreate(reg->cep, reg->x, reg->y, reg->w, reg->h);
 }
 
-/* ─── Structs auxiliares para callbacks do hash_forEach ─────────── */
+/* ─── Structs auxiliares para callbacks do hashForEach ─────────── */
 
 typedef struct {
     char cep[MAX_CEP];    /* filtro por CEP               */
@@ -94,7 +94,7 @@ typedef struct {
     Hash h_mor;           /* para checar se é morador     */
 } CensoAux;
 
-/* ─── Callbacks para hash_forEach ───────────────────────────────── */
+/* ─── Callbacks para hashForEach ───────────────────────────────── */
 
 static void cb_contar_face(char *key, void *data, size_t data_size, void *aux)
 {
@@ -138,7 +138,7 @@ static void cb_censo_habitantes(char *key, void *data, size_t data_size, void *a
     if (hab->sexo == 'M') ctx->homens++;
     else                  ctx->mulheres++;
 
-    if (hash_exists(ctx->h_mor, hab->cpf)) {
+    if (hashExists(ctx->h_mor, hab->cpf)) {
         ctx->total_mor++;
         if (hab->sexo == 'M') ctx->mor_homens++;
         else                  ctx->mor_mulheres++;
@@ -159,7 +159,7 @@ static void processar_rq(const char *linha, Hash h_quadras, Hash h_hab, Hash h_m
 
     /* Recupera a quadra para o SVG */
     QuadraReg qreg;
-    if (!hash_getRegistry(h_quadras, cep, &qreg, sizeof(QuadraReg))) {
+    if (!hashGetRegistry(h_quadras, cep, &qreg, sizeof(QuadraReg))) {
         fprintf(txt, "ERRO: quadra '%s' nao encontrada\n", cep);
         return;
     }
@@ -168,16 +168,16 @@ static void processar_rq(const char *linha, Hash h_quadras, Hash h_hab, Hash h_m
     MoradoresCepAux ctx;
     strncpy(ctx.cep, cep, MAX_CEP);
     ctx.count = 0;
-    hash_forEach(h_mor, cb_coletar_moradores_cep, &ctx);
+    hashForEach(h_mor, cb_coletar_moradores_cep, &ctx);
 
     /* TXT: CPF e nome de cada morador que perde o endereço */
     for (int i = 0; i < ctx.count; i++) {
         HabitanteReg hreg;
-        if (hash_getRegistry(h_hab, ctx.cpfs[i], &hreg, sizeof(HabitanteReg)))
+        if (hashGetRegistry(h_hab, ctx.cpfs[i], &hreg, sizeof(HabitanteReg)))
             fprintf(txt, "%s %s %s\n", ctx.cpfs[i], hreg.nome, hreg.sobrenome);
 
         /* Remove do hashfile de moradores — viram sem-teto */
-        hash_removeReg(h_mor, ctx.cpfs[i]);
+        hashRemoveReg(h_mor, ctx.cpfs[i]);
     }
 
     /* SVG: pequeno X vermelho na âncora da quadra removida */
@@ -186,7 +186,7 @@ static void processar_rq(const char *linha, Hash h_quadras, Hash h_hab, Hash h_m
     svgMarcaRedCross(svg, ax, ay);
 
     /* Remove a quadra */
-    hash_removeReg(h_quadras, cep);
+    hashRemoveReg(h_quadras, cep);
 }
 
 static void processar_pq(const char *linha, Hash h_quadras, Hash h_mor, FILE *svg, FILE *txt)
@@ -200,7 +200,7 @@ static void processar_pq(const char *linha, Hash h_quadras, Hash h_mor, FILE *sv
     fprintf(txt, "[*] pq %s\n", cep);
 
     QuadraReg qreg;
-    if (!hash_getRegistry(h_quadras, cep, &qreg, sizeof(QuadraReg))) {
+    if (!hashGetRegistry(h_quadras, cep, &qreg, sizeof(QuadraReg))) {
         fprintf(txt, "ERRO: quadra '%s' nao encontrada\n", cep);
         return;
     }
@@ -209,7 +209,7 @@ static void processar_pq(const char *linha, Hash h_quadras, Hash h_mor, FILE *sv
     ContFaceAux ctx;
     strncpy(ctx.cep, cep, MAX_CEP);
     ctx.n = ctx.s = ctx.l = ctx.o = ctx.total = 0;
-    hash_forEach(h_mor, cb_contar_face, &ctx);
+    hashForEach(h_mor, cb_contar_face, &ctx);
 
     /* TXT */
     fprintf(txt, "Face N: %d\n", ctx.n);
@@ -243,7 +243,7 @@ static void processar_censo(Hash h_hab, Hash h_mor, FILE *txt)
     ctx.mor_mulheres = 0;
     ctx.h_mor      = h_mor;
 
-    hash_forEach(h_hab, cb_censo_habitantes, &ctx);
+    hashForEach(h_hab, cb_censo_habitantes, &ctx);
 
     int sem_teto         = ctx.total_hab - ctx.total_mor;
     int sem_teto_homens  = ctx.homens    - ctx.mor_homens;
@@ -289,7 +289,7 @@ static void processar_h(const char *linha,
     fprintf(txt, "[*] h? %s\n", cpf);
 
     HabitanteReg hreg;
-    if (!hash_getRegistry(h_hab, cpf, &hreg, sizeof(HabitanteReg))) {
+    if (!hashGetRegistry(h_hab, cpf, &hreg, sizeof(HabitanteReg))) {
         fprintf(txt, "ERRO: habitante '%s' nao encontrado\n", cpf);
         return;
     }
@@ -300,7 +300,7 @@ static void processar_h(const char *linha,
     fprintf(txt, "Nascimento : %s\n", hreg.nascimento);
 
     MoradorReg mreg;
-    if (hash_getRegistry(h_mor, cpf, &mreg, sizeof(MoradorReg))) {
+    if (hashGetRegistry(h_mor, cpf, &mreg, sizeof(MoradorReg))) {
         fprintf(txt, "Endereco   : %s / Face.%c / %d / %s\n",
                 mreg.cep, mreg.face, mreg.num, mreg.complemento);
     } else {
@@ -324,7 +324,7 @@ static void processar_nasc(const char *linha, Hash h_hab)
     }
 
     reg.sexo = sexo_str[0];
-    hash_insertReg(h_hab, reg.cpf, &reg, sizeof(HabitanteReg));
+    hashInsertReg(h_hab, reg.cpf, &reg, sizeof(HabitanteReg));
 }
 
 static void processar_rip(const char *linha,
@@ -340,7 +340,7 @@ static void processar_rip(const char *linha,
     fprintf(txt, "[*] rip %s\n", cpf);
 
     HabitanteReg hreg;
-    if (!hash_getRegistry(h_hab, cpf, &hreg, sizeof(HabitanteReg))) {
+    if (!hashGetRegistry(h_hab, cpf, &hreg, sizeof(HabitanteReg))) {
         fprintf(txt, "ERRO: habitante '%s' nao encontrado\n", cpf);
         return;
     }
@@ -352,22 +352,22 @@ static void processar_rip(const char *linha,
 
     /* Se era morador, reporta endereço e marca no SVG */
     MoradorReg mreg;
-    if (hash_getRegistry(h_mor, cpf, &mreg, sizeof(MoradorReg))) {
+    if (hashGetRegistry(h_mor, cpf, &mreg, sizeof(MoradorReg))) {
         fprintf(txt, "Endereco   : %s / Face.%c / %d / %s\n",
                 mreg.cep, mreg.face, mreg.num, mreg.complemento);
 
         QuadraReg qreg;
-        if (hash_getRegistry(h_quadras, mreg.cep, &qreg, sizeof(QuadraReg))) {
+        if (hashGetRegistry(h_quadras, mreg.cep, &qreg, sizeof(QuadraReg))) {
             double px, py;
             calcPosEndereco(qreg.x, qreg.y, qreg.w, qreg.h,
                             mreg.face, mreg.num, &px, &py);
             svgMarcaRedCross(svg, px, py);
         }
 
-        hash_removeReg(h_mor, cpf);
+        hashRemoveReg(h_mor, cpf);
     }
 
-    hash_removeReg(h_hab, cpf);
+    hashRemoveReg(h_hab, cpf);
 }
 
 static void processar_mud(const char *linha,
@@ -388,7 +388,7 @@ static void processar_mud(const char *linha,
 
     fprintf(txt, "[*] mud %s\n", cpf);
 
-    if (!hash_exists(h_hab, cpf)) {
+    if (!hashExists(h_hab, cpf)) {
         fprintf(txt, "ERRO: habitante '%s' nao encontrado\n", cpf);
         return;
     }
@@ -405,11 +405,11 @@ static void processar_mud(const char *linha,
     mreg.face   = ponto ? *(ponto + 1) : face_str[0];
 
     /* Insere ou atualiza no hashfile de moradores */
-    hash_insertReg(h_mor, cpf, &mreg, sizeof(MoradorReg));
+    hashInsertReg(h_mor, cpf, &mreg, sizeof(MoradorReg));
 
     /* SVG: quadrado vermelho com CPF no destino */
     QuadraReg qreg;
-    if (hash_getRegistry(h_quadras, cep, &qreg, sizeof(QuadraReg))) {
+    if (hashGetRegistry(h_quadras, cep, &qreg, sizeof(QuadraReg))) {
         double px, py;
         calcPosEndereco(qreg.x, qreg.y, qreg.w, qreg.h,
                         mreg.face, mreg.num, &px, &py);
@@ -430,13 +430,13 @@ static void processar_dspj(const char *linha,
     fprintf(txt, "[*] dspj %s\n", cpf);
 
     HabitanteReg hreg;
-    if (!hash_getRegistry(h_hab, cpf, &hreg, sizeof(HabitanteReg))) {
+    if (!hashGetRegistry(h_hab, cpf, &hreg, sizeof(HabitanteReg))) {
         fprintf(txt, "ERRO: habitante '%s' nao encontrado\n", cpf);
         return;
     }
 
     MoradorReg mreg;
-    if (!hash_getRegistry(h_mor, cpf, &mreg, sizeof(MoradorReg))) {
+    if (!hashGetRegistry(h_mor, cpf, &mreg, sizeof(MoradorReg))) {
         fprintf(txt, "ERRO: '%s' nao e morador\n", cpf);
         return;
     }
@@ -449,7 +449,7 @@ static void processar_dspj(const char *linha,
 
     /* SVG: círculo preto no local do despejo */
     QuadraReg qreg;
-    if (hash_getRegistry(h_quadras, mreg.cep, &qreg, sizeof(QuadraReg))) {
+    if (hashGetRegistry(h_quadras, mreg.cep, &qreg, sizeof(QuadraReg))) {
         double px, py;
         calcPosEndereco(qreg.x, qreg.y, qreg.w, qreg.h,
                         mreg.face, mreg.num, &px, &py);
@@ -457,7 +457,7 @@ static void processar_dspj(const char *linha,
     }
 
     /* Remove do hashfile de moradores — vira sem-teto */
-    hash_removeReg(h_mor, cpf);
+    hashRemoveReg(h_mor, cpf);
 }
 
 /* ─── Interface pública ──────────────────────────────────────────── */

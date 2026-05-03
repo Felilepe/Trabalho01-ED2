@@ -9,7 +9,6 @@
 
 #define MAX_LINHA 256
 
-/* ─── Struct de disco (privada — não exposta no .h) ──────────────── */
 
 typedef struct {
     char   cep[20];
@@ -18,15 +17,11 @@ typedef struct {
     char   cstrk[30];
 } QuadraReg;
 
-/* ─── Estado interno do parser ───────────────────────────────────── */
 
-/* Cores e espessura padrão, alteradas pelo comando 'cq'.
- * Inicializadas com os mesmos defaults de quadra.c. */
 static double default_sw    = 1.5;
 static char   default_fill[30] = "#E08E2D";
 static char   default_strk[30] = "#E06F2D";
 
-/* ─── Funções estáticas (uma por comando) ────────────────────────── */
 
 static void processar_q(const char *linha, Hash h_quadras, FILE *svg)
 {
@@ -51,7 +46,7 @@ static void processar_q(const char *linha, Hash h_quadras, FILE *svg)
     reg.cstrk[sizeof(reg.cstrk) - 1] = '\0';
 
     /* Armazena no hashfile */
-    hash_insertReg(h_quadras, reg.cep, &reg, sizeof(QuadraReg));
+    hashInsertReg(h_quadras, reg.cep, &reg, sizeof(QuadraReg));
 
     /* Cria Quadra temporária apenas para desenhar no SVG */
     Quadra q = quadraCreate(reg.cep, reg.x, reg.y, reg.w, reg.h);
@@ -88,7 +83,7 @@ static void processar_cq(const char *linha)
     default_strk[sizeof(default_strk) - 1] = '\0';
 }
 
-/* ─── Interface pública ──────────────────────────────────────────── */
+
 
 void parseGeo(const char *caminho, Hash h_quadras, FILE *svg)
 {
@@ -99,8 +94,10 @@ void parseGeo(const char *caminho, Hash h_quadras, FILE *svg)
 
     /* Reinicia os defaults a cada chamada */
     default_sw = 1.5;
-    strncpy(default_fill, "#E08E2D", sizeof(default_fill));
-    strncpy(default_strk, "#E06F2D", sizeof(default_strk));
+    strncpy(default_fill, "#E08E2D", sizeof(default_fill) - 1);
+    default_fill[sizeof(default_fill) - 1] = '\0';
+    strncpy(default_strk, "#E06F2D", sizeof(default_strk) - 1);
+    default_strk[sizeof(default_strk) - 1] = '\0';
 
     FILE *geo = fopen(caminho, "r");
     if (geo == NULL) {
@@ -125,13 +122,11 @@ void parseGeo(const char *caminho, Hash h_quadras, FILE *svg)
     fclose(geo);
 }
 
-bool geoGetQuadra(Hash h_quadras, char *cep,
-                  double *x, double *y, double *w, double *h,
-                  double *sw, char *cfill, char *cstrk)
+bool geoGetQuadra(Hash h_quadras, char *cep, double *x, double *y, double *w, double *h, double *sw, char *cfill, char *cstrk)
 {
     QuadraReg reg;
 
-    if (!hash_getRegistry(h_quadras, cep, &reg, sizeof(QuadraReg)))
+    if (!hashGetRegistry(h_quadras, cep, &reg, sizeof(QuadraReg)))
         return false;
 
     if (x)     *x  = reg.x;
@@ -139,8 +134,14 @@ bool geoGetQuadra(Hash h_quadras, char *cep,
     if (w)     *w  = reg.w;
     if (h)     *h  = reg.h;
     if (sw)    *sw = reg.sw;
-    if (cfill) strcpy(cfill, reg.cfill);
-    if (cstrk) strcpy(cstrk, reg.cstrk);
+    if (cfill) {
+        strncpy(cfill, reg.cfill, 29);
+        cfill[29] = '\0';
+    }
+    if (cstrk) {
+        strncpy(cstrk, reg.cstrk, 29);
+        cstrk[29] = '\0';
+    }
 
     return true;
 }

@@ -45,7 +45,7 @@ static void processar_p(const char *linha, Hash h_hab)
  
     reg.sexo = sexo_str[0];
  
-    hash_insertReg(h_hab, reg.cpf, &reg, sizeof(HabitanteReg));
+    hashInsertReg(h_hab, reg.cpf, &reg, sizeof(HabitanteReg));
 }
  
 static void processar_m(const char *linha, Hash h_mor)
@@ -70,7 +70,7 @@ static void processar_m(const char *linha, Hash h_mor)
     char *ponto = strchr(face_str, '.');
     reg.face = ponto ? *(ponto + 1) : face_str[0];
  
-    hash_insertReg(h_mor, reg.cpf, &reg, sizeof(MoradorReg));
+    hashInsertReg(h_mor, reg.cpf, &reg, sizeof(MoradorReg));
 }
  
 
@@ -111,13 +111,22 @@ bool pmGetHabitante(Hash h_hab, char *cpf,
 {
     HabitanteReg reg;
  
-    if (!hash_getRegistry(h_hab, cpf, &reg, sizeof(HabitanteReg)))
+    if (!hashGetRegistry(h_hab, cpf, &reg, sizeof(HabitanteReg)))
         return false;
  
-    if (nome)       strcpy(nome,       reg.nome);
-    if (sobrenome)  strcpy(sobrenome,  reg.sobrenome);
+    if (nome) {
+        strncpy(nome, reg.nome, 49);
+        nome[49] = '\0';
+    }
+    if (sobrenome) {
+        strncpy(sobrenome, reg.sobrenome, 49);
+        sobrenome[49] = '\0';
+    }
     if (sexo)       *sexo = reg.sexo;
-    if (nascimento) strcpy(nascimento, reg.nascimento);
+    if (nascimento) {
+        strncpy(nascimento, reg.nascimento, 11);
+        nascimento[11] = '\0';
+    }
  
     return true;
 }
@@ -128,13 +137,19 @@ bool pmGetMorador(Hash h_mor, char *cpf,
 {
     MoradorReg reg;
  
-    if (!hash_getRegistry(h_mor, cpf, &reg, sizeof(MoradorReg)))
+    if (!hashGetRegistry(h_mor, cpf, &reg, sizeof(MoradorReg)))
         return false;
  
-    if (cep)         strcpy(cep, reg.cep);
+    if (cep) {
+        strncpy(cep, reg.cep, 19);
+        cep[19] = '\0';
+    }
     if (face)        *face = reg.face;
     if (num)         *num  = reg.num;
-    if (complemento) strcpy(complemento, reg.complemento);
+    if (complemento) {
+        strncpy(complemento, reg.complemento, 49);
+        complemento[49] = '\0';
+    }
  
     return true;
 }
