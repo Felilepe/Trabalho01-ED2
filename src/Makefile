@@ -92,7 +92,6 @@ t_parse_geo: $(TST_DIR)/t_parse_geo.c $(SRC_DIR)/parse_geo.o \
 # ── parse_pm ────────────────────────────────────────────────────────
 t_parse_pm: $(TST_DIR)/t_parse_pm.c $(SRC_DIR)/parse_pm.o \
             $(SRC_DIR)/hte.o $(SRC_DIR)/habitante.o $(SRC_DIR)/morador.o
-			$(SRC_DIR)/lista.o  
 	$(CC) $(CFLAGS) $^ $(UNITY_OBJ) -o $(TST_DIR)/t_parse_pm
 	$(TST_DIR)/t_parse_pm
 
@@ -105,7 +104,8 @@ t_svg: $(TST_DIR)/t_svg.c $(SRC_DIR)/svg.o $(SRC_DIR)/quadra.o \
 # ── parse_qry ───────────────────────────────────────────────────────
 t_parse_qry: $(TST_DIR)/t_parse_qry.c $(SRC_DIR)/parse_qry.o \
              $(SRC_DIR)/parse_geo.o $(SRC_DIR)/parse_pm.o \
-             $(SRC_DIR)/hte.o $(SRC_DIR)/quadra.o $(SRC_DIR)/svg.o
+             $(SRC_DIR)/hte.o $(SRC_DIR)/quadra.o $(SRC_DIR)/svg.o \
+             $(SRC_DIR)/lista.o
 	$(CC) $(CFLAGS) $^ $(UNITY_OBJ) -o $(TST_DIR)/t_parse_qry
 	$(TST_DIR)/t_parse_qry
 
