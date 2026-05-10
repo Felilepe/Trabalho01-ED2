@@ -4,6 +4,7 @@ ALUNO     = Felipe Augusto Castilho Sepulveda
 CC      = gcc
 CFLAGS  = -ggdb -O0 -std=c99 -fstack-protector-all \
           -Werror=implicit-function-declaration \
+          -DUNITY_INCLUDE_DOUBLE \
           -I$(SRC_DIR) -I$(UNITY_DIR)
 LDFLAGS = -O0
 
