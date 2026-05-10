@@ -49,7 +49,7 @@ FILE* startSVG(const char* file_path) {
 	}
 
      fprintf(svg, "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
-     fprintf(svg, "<svg xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" width=\"1000\" height=\"1000\">\n");
+     fprintf(svg, "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\"25000\" height=\"25000\">\n");
 
  
 
@@ -70,9 +70,8 @@ void stopSVG(FILE *file_name)
 
 void svgInsertQuadra(FILE *file_name, Quadra r)
 {
-    fprintf(file_name, "\t<rect id=\"%s\" x=\"%lf\" y=\"%lf\" width=\"%lf\" height=\"%lf\" stroke=\"%s\" fill=\"%s\" opacity=\"%lf\" stroke-width=\"%lf\" />\n",
-	    quadraGetCep(r), quadraGetCoordX(r), quadraGetCoordY(r), quadraGetWidth(r), quadraGetHeight(r), quadraGetCorBorda(r), 
-        quadraGetCorPreench(r), OPACITY, quadraGetBordaWidth(r));
+    fprintf(file_name, "\t<rect id=\"%s\" x=\"%lf\" y=\"%lf\" width=\"%lf\" height=\"%lf\" fill=\"%s\" stroke=\"%s\" stroke-width=\"1.0px\" fill-opacity=\"%lf\" />\n",
+	    quadraGetCep(r), quadraGetCoordX(r), quadraGetCoordY(r), quadraGetWidth(r), quadraGetHeight(r), quadraGetCorPreench(r), quadraGetCorBorda(r), 0.5);
 }
 
 void svgMarcaRedCross(FILE *file_name, double x, double y)

@@ -60,18 +60,15 @@ quadraSetBordaWidth(q, reg.sw);
 quadraSetCorBorda(q,   reg.cstrk);
 quadraSetCorPreench(q, reg.cfill);
 svgInsertQuadra(svg, q);
-svgMarcaCep(svg, q);
-quadraDestroy(q);
-
+    // svgMarcaCep(svg, q);quadraDestroy(q);
 }
-
 static void processar_cq(const char *linha)
 {
     char cfill[30], cstrk[30];
     double sw;
 
     int lidos = sscanf(linha,
-                       "%*s %lf %29s %29s",
+                       "%*s %lf%*s %29s %29s",
                        &sw, cfill, cstrk);
 
     if (lidos != 3) {

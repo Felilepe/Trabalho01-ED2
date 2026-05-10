@@ -276,7 +276,7 @@ static void processar_pq(const char *linha, Hash h_quadras, Hash h_mor, FILE *sv
 
 static void processar_censo(Hash h_hab, Hash h_mor, FILE *txt)
 {
-    fprintf(txt, "[*] censo\n");
+    fprintf(txt, "\n--- COMANDO CENSO ---\n\n");
 
     CensoAux ctx;
     ctx.total_hab    = 0;
@@ -308,16 +308,18 @@ static void processar_censo(Hash h_hab, Hash h_mor, FILE *txt)
     double pct_sm = sem_teto > 0
                     ? (double)sem_teto_mulheres / sem_teto * 100.0 : 0.0;
 
-    fprintf(txt, "Total de habitantes      : %d\n",           ctx.total_hab);
-    fprintf(txt, "Total de moradores       : %d\n",           ctx.total_mor);
-    fprintf(txt, "Proporcao mor/hab        : %.2f%%\n",        prop);
-    fprintf(txt, "Homens                   : %d (%.2f%%)\n",  ctx.homens,        pct_h);
-    fprintf(txt, "Mulheres                 : %d (%.2f%%)\n",  ctx.mulheres,      pct_m);
-    fprintf(txt, "Moradores homens         : %d (%.2f%%)\n",  ctx.mor_homens,    pct_mh);
-    fprintf(txt, "Moradores mulheres       : %d (%.2f%%)\n",  ctx.mor_mulheres,  pct_mm);
-    fprintf(txt, "Sem-teto                 : %d\n",           sem_teto);
-    fprintf(txt, "Sem-teto homens          : %d (%.2f%%)\n",  sem_teto_homens,   pct_sh);
-    fprintf(txt, "Sem-teto mulheres        : %d (%.2f%%)\n",  sem_teto_mulheres, pct_sm);
+    fprintf(txt, "- Total de habitantes: %d\n", ctx.total_hab);
+    fprintf(txt, "- Total de moradores: %d\n", ctx.total_mor);
+    fprintf(txt, "- Proporção moradores/habit.: %.2f%%\n", prop);
+    fprintf(txt, "- Número de homens: %d\n", ctx.homens);
+    fprintf(txt, "- Número de mulheres: %d\n", ctx.mulheres);
+    fprintf(txt, "- %% habitantes homens: %.2f%%\n", pct_h);
+    fprintf(txt, "- %% habitantes mulheres: %.2f%%\n", pct_m);
+    fprintf(txt, "- %% moradores homens: %.2f%%\n", pct_mh);
+    fprintf(txt, "- %% moradores mulheres: %.2f%%\n", pct_mm);
+    fprintf(txt, "- Total de sem-tetos: %d\n", sem_teto);
+    fprintf(txt, "- %% sem-tetos homens: %.2f%%\n", pct_sh);
+    fprintf(txt, "- %% sem-tetos mulheres: %.2f%%\n", pct_sm);
 }
 
 static void processar_h(const char *linha,
@@ -329,7 +331,7 @@ static void processar_h(const char *linha,
         return;
     }
 
-    fprintf(txt, "[*] h? %s\n", cpf);
+    fprintf(txt, "\n--- COMANDO H? --- argumentos: %s ---\n\n", cpf);
 
     HabitanteReg hreg;
     if (!hashGetRegistry(h_hab, cpf, &hreg, sizeof(HabitanteReg))) {
@@ -337,21 +339,21 @@ static void processar_h(const char *linha,
         return;
     }
 
-    fprintf(txt, "CPF        : %s\n",    hreg.cpf);
-    fprintf(txt, "Nome       : %s %s\n", hreg.nome, hreg.sobrenome);
-    fprintf(txt, "Sexo       : %c\n",    hreg.sexo);
-    fprintf(txt, "Nascimento : %s\n",    hreg.nascimento);
+    fprintf(txt, "- CPF: %s\n",    hreg.cpf);
+    fprintf(txt, "- Nome: %s %s\n", hreg.nome, hreg.sobrenome);
+    fprintf(txt, "- Sexo: %c\n",    hreg.sexo);
+    fprintf(txt, "- Nascimento: %s\n", hreg.nascimento);
 
     MoradorReg mreg;
     if (hashGetRegistry(h_mor, cpf, &mreg, sizeof(MoradorReg))) {
-        fprintf(txt, "Endereco   : %s / Face.%c / %d / %s\n",
+        fprintf(txt, "- Endereco: %s / Face.%c / %d / %s\n",
                 mreg.cep, mreg.face, mreg.num, mreg.complemento);
     } else {
-        fprintf(txt, "Situacao   : sem-teto\n");
+        fprintf(txt, "- Sem endereço (sem-teto)\n");
     }
 }
 
-static void processar_nasc(const char *linha, Hash h_hab)
+static void processar_nasc(const char *linha, Hash h_hab, FILE *txt)
 {
     HabitanteReg reg;
     char sexo_str[4];
@@ -368,6 +370,9 @@ static void processar_nasc(const char *linha, Hash h_hab)
 
     reg.sexo = sexo_str[0];
     hashInsertReg(h_hab, reg.cpf, &reg, sizeof(HabitanteReg));
+    
+    fprintf(txt, "\n--- COMANDO NASC --- argumentos: %s %s %s %s %s ---\n",
+            reg.cpf, reg.nome, reg.sobrenome, sexo_str, reg.nascimento);
 }
 
 static void processar_rip(const char *linha,
@@ -431,13 +436,11 @@ static void processar_mud(const char *linha,
 
     fprintf(txt, "[*] mud %s\n", cpf);
 
-    /* FIX Bug 1: verifica se o CPF pertence a um habitante conhecido */
     if (!hashExists(h_hab, cpf)) {
         fprintf(txt, "ERRO: habitante '%s' nao encontrado\n", cpf);
         return;
     }
 
-    /* FIX Bug 1: verifica se o habitante e de fato um morador */
     if (!hashExists(h_mor, cpf)) {
         fprintf(txt, "ERRO: '%s' nao e morador\n", cpf);
         return;
@@ -477,7 +480,7 @@ static void processar_dspj(const char *linha,
         return;
     }
 
-    fprintf(txt, "[*] dspj %s\n", cpf);
+    fprintf(txt, "\n--- COMANDO DSPJ --- argumentos: %s ---\n\n", cpf);
 
     HabitanteReg hreg;
     if (!hashGetRegistry(h_hab, cpf, &hreg, sizeof(HabitanteReg))) {
@@ -492,9 +495,11 @@ static void processar_dspj(const char *linha,
     }
 
     /* TXT: dados do habitante e endereco do despejo */
-    fprintf(txt, "CPF      : %s\n",    hreg.cpf);
-    fprintf(txt, "Nome     : %s %s\n", hreg.nome, hreg.sobrenome);
-    fprintf(txt, "Endereco : %s / Face.%c / %d / %s\n",
+    fprintf(txt, "- CPF: %s\n",    hreg.cpf);
+    fprintf(txt, "- Nome: %s %s\n", hreg.nome, hreg.sobrenome);
+    fprintf(txt, "- Sexo: %c\n", hreg.sexo);
+    fprintf(txt, "- Nascimento: %s\n", hreg.nascimento);
+    fprintf(txt, "- Endereço do despejo: %s / Face.%c / %d / %s\n",
             mreg.cep, mreg.face, mreg.num, mreg.complemento);
 
     /* SVG: circulo preto no local do despejo */
@@ -545,7 +550,7 @@ void parseQry(const char *caminho,
         else if (strcmp(cmd, "h?")    == 0)
             processar_h(linha, h_hab, h_mor, txt);
         else if (strcmp(cmd, "nasc")  == 0)
-            processar_nasc(linha, h_hab);
+            processar_nasc(linha, h_hab, txt);
         else if (strcmp(cmd, "rip")   == 0)
             processar_rip(linha, h_quadras, h_hab, h_mor, svg, txt);
         else if (strcmp(cmd, "mud")   == 0)

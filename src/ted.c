@@ -16,7 +16,9 @@
 static void base_name(const char *path, char *out, size_t out_max)
 {
     const char *slash = strrchr(path, '/');
-    const char *start = slash ? slash + 1 : path;
+    const char *backslash = strrchr(path, '\\');
+    const char *last_sep = (slash > backslash) ? slash : backslash;
+    const char *start = last_sep ? last_sep + 1 : path;
  
     const char *dot = strrchr(start, '.');
     size_t len = dot ? (size_t)(dot - start) : strlen(start);
@@ -128,16 +130,16 @@ int main(int argc, char *argv[])
     base_name(arq_geo, base_geo, FILE_NAME_LEN);
  
     char path_hf_quad[PATH_LEN], path_hf_hab[PATH_LEN], path_hf_mor[PATH_LEN];
-    snprintf(path_hf_quad, PATH_LEN, "%s/%s_quadras.hf",    dir_saida, base_geo);
-    snprintf(path_hf_hab,  PATH_LEN, "%s/%s_habitantes.hf", dir_saida, base_geo);
-    snprintf(path_hf_mor,  PATH_LEN, "%s/%s_moradores.hf",  dir_saida, base_geo);
+    snprintf(path_hf_quad, PATH_LEN, "%s/%s_blocks.hf",    dir_saida, base_geo);
+    snprintf(path_hf_hab,  PATH_LEN, "%s/%s_people.hf", dir_saida, base_geo);
+    snprintf(path_hf_mor,  PATH_LEN, "%s/%s_addresses.hf",  dir_saida, base_geo);
  
     remove(path_hf_quad); remove(path_hf_hab); remove(path_hf_mor);
  
     char aux[PATH_LEN];
-    snprintf(aux, PATH_LEN, "%s/%s_quadras.hfc",    dir_saida, base_geo); remove(aux);
-    snprintf(aux, PATH_LEN, "%s/%s_habitantes.hfc", dir_saida, base_geo); remove(aux);
-    snprintf(aux, PATH_LEN, "%s/%s_moradores.hfc",  dir_saida, base_geo); remove(aux);
+    snprintf(aux, PATH_LEN, "%s/%s_blocks.hfc",    dir_saida, base_geo); remove(aux);
+    snprintf(aux, PATH_LEN, "%s/%s_people.hfc", dir_saida, base_geo); remove(aux);
+    snprintf(aux, PATH_LEN, "%s/%s_addresses.hfc",  dir_saida, base_geo); remove(aux);
  
     Hash h_quadras = hashOpenFile(path_hf_quad);
     Hash h_hab     = hashOpenFile(path_hf_hab);
@@ -194,13 +196,13 @@ int main(int argc, char *argv[])
         }
     }
  
-    char path_hfd[PATH_LEN];
-    snprintf(path_hfd, PATH_LEN, "%s/%s_quadras.hfd",    dir_saida, base_geo);
-    hashDumpFile(h_quadras, path_hfd);
-    snprintf(path_hfd, PATH_LEN, "%s/%s_habitantes.hfd", dir_saida, base_geo);
-    hashDumpFile(h_hab, path_hfd);
-    snprintf(path_hfd, PATH_LEN, "%s/%s_moradores.hfd",  dir_saida, base_geo);
-    hashDumpFile(h_mor, path_hfd);
+    // char path_hfd[PATH_LEN];
+    // snprintf(path_hfd, PATH_LEN, "%s/%s_blocks.hfd",    dir_saida, base_geo);
+    // hashDumpFile(h_quadras, path_hfd);
+    // snprintf(path_hfd, PATH_LEN, "%s/%s_people.hfd", dir_saida, base_geo);
+    // hashDumpFile(h_hab, path_hfd);
+    // snprintf(path_hfd, PATH_LEN, "%s/%s_addresses.hfd",  dir_saida, base_geo);
+    // hashDumpFile(h_mor, path_hfd);
  
     hashCloseFile(h_quadras);
     hashCloseFile(h_hab);
