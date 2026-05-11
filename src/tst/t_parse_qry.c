@@ -1,303 +1,449 @@
 #include "../unity.h"
+#include "../parse_qry.h"
+#include "../parse_geo.h"
+#include "../parse_pm.h"
+#include "../hte.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
-/* parse_qry é um módulo complexo que depende de muitos outros módulos.
- * Portanto, fazemos testes básicos de segurança e estrutura. */
+/* ── Arquivos temporários ── */
+#define TMP_QRY  "tmp_test.qry"
+#define TMP_SVG  "tmp_test.svg"
+#define TMP_TXT  "tmp_test.txt"
+#define TMP_GEO  "tmp_test.geo"
+#define TMP_PM   "tmp_test.pm"
+#define TMP_HF_Q "tmp_quadras.hf"
+#define TMP_HF_H "tmp_hab.hf"
+#define TMP_HF_M "tmp_mor.hf"
 
-void setUp(void) {}
+static Hash  h_quadras, h_hab, h_mor;
+static FILE *svg_out, *txt_out;
 
-void tearDown(void) {}
-
-/* Testa se o arquivo de query pode ser criado */
-void test_query_file_creation(void) 
+/* Lê conteúdo de arquivo para buffer */
+static int read_file(const char *path, char *buf, int buf_size)
 {
-    const char *test_query_file = "test_query.qry";
-    
-    FILE *f = fopen(test_query_file, "w");
-    TEST_ASSERT_NOT_NULL(f);
-    
-    fprintf(f, "# Arquivo de teste de queries\n");
-    fprintf(f, "rq CEP001\n");
-    fprintf(f, "rf CEP001\n");
-    
+    FILE *f = fopen(path, "r");
+    if (!f) { buf[0] = '\0'; return 0; }
+    int n = (int)fread(buf, 1, buf_size - 1, f);
+    buf[n] = '\0';
     fclose(f);
-    
-    /* Verificar se arquivo foi criado */
-    FILE *check = fopen(test_query_file, "r");
-    TEST_ASSERT_NOT_NULL(check);
-    fclose(check);
-    
-    remove(test_query_file);
+    return n;
 }
 
-/* Testa se parse_qry pode ser chamado sem crashes com arquivo vazio */
-void test_parse_qry_empty_file(void) 
+static void cleanup_tmp(void)
 {
-    const char *test_file = "empty_query.qry";
-    
-    FILE *f = fopen(test_file, "w");
+    remove(TMP_HF_Q); remove("tmp_quadras.hfc");
+    remove(TMP_HF_H); remove("tmp_hab.hfc");
+    remove(TMP_HF_M); remove("tmp_mor.hfc");
+    remove(TMP_GEO); remove(TMP_PM);
+    remove(TMP_QRY); remove(TMP_SVG); remove(TMP_TXT);
+}
+
+void setUp(void)
+{
+    cleanup_tmp();
+
+    h_quadras = hashOpenFile(TMP_HF_Q);
+    h_hab     = hashOpenFile(TMP_HF_H);
+    h_mor     = hashOpenFile(TMP_HF_M);
+
+    /* Popula quadras via parseGeo */
+    FILE *geo = fopen(TMP_GEO, "w");
+    fprintf(geo, "q cep01 0.0 0.0 200.0 100.0\n");
+    fprintf(geo, "q cep02 300.0 0.0 150.0 120.0\n");
+    fclose(geo);
+
+    FILE *svg_dummy = fopen(TMP_SVG, "w");
+    parseGeo(TMP_GEO, h_quadras, svg_dummy);
+    fclose(svg_dummy);
+
+    /* Popula habitantes e moradores via parsePm */
+    FILE *pm = fopen(TMP_PM, "w");
+    fprintf(pm, "p 11111111111 Joao Silva M 01/01/1990\n");
+    fprintf(pm, "p 22222222222 Maria Santos F 15/06/1985\n");
+    fprintf(pm, "p 33333333333 Pedro Costa M 10/03/1975\n"); /* sem-teto */
+    fprintf(pm, "m 11111111111 cep01 N 50 Apto1\n");
+    fprintf(pm, "m 22222222222 cep01 S 30 Casa2\n");
+    fclose(pm);
+    parsePm(TMP_PM, h_hab, h_mor);
+
+    /* Abre saídas para parseQry */
+    svg_out = fopen(TMP_SVG, "w");
+    txt_out = fopen(TMP_TXT, "w");
+}
+
+void tearDown(void)
+{
+    if (svg_out) { fclose(svg_out); svg_out = NULL; }
+    if (txt_out) { fclose(txt_out); txt_out = NULL; }
+    if (h_quadras) { hashCloseFile(h_quadras); h_quadras = NULL; }
+    if (h_hab)     { hashCloseFile(h_hab);     h_hab     = NULL; }
+    if (h_mor)     { hashCloseFile(h_mor);     h_mor     = NULL; }
+    cleanup_tmp();
+}
+
+/* Escreve o arquivo .qry e executa parseQry, fechando as saídas */
+static void write_qry(const char *content)
+{
+    FILE *f = fopen(TMP_QRY, "w");
+    fprintf(f, "%s", content);
     fclose(f);
-    
-    /* Arquivo existe mas está vazio - não deve crashear */
+}
+
+static void run_qry(void)
+{
+    parseQry(TMP_QRY, h_quadras, h_hab, h_mor, svg_out, txt_out);
+    fclose(svg_out); svg_out = NULL;
+    fclose(txt_out); txt_out = NULL;
+}
+
+/* ─── Testes de robustez ──────────────────────────────────────────── */
+
+void test_parseQry_null_params(void)
+{
+    write_qry("censo\n");
+    /* Nenhuma chamada deve crashar */
+    parseQry(NULL,    h_quadras, h_hab, h_mor, svg_out, txt_out);
+    parseQry(TMP_QRY, NULL,      h_hab, h_mor, svg_out, txt_out);
+    parseQry(TMP_QRY, h_quadras, NULL,  h_mor, svg_out, txt_out);
+    parseQry(TMP_QRY, h_quadras, h_hab, NULL,  svg_out, txt_out);
     TEST_ASSERT_TRUE(1);
-    
-    remove(test_file);
 }
 
-/* Testa processamento de linhas simples */
-void test_parse_qry_simple_lines(void) 
+void test_parseQry_nonexistent_file(void)
 {
-    const char *test_file = "simple_query.qry";
-    
-    FILE *f = fopen(test_file, "w");
-    if (f == NULL) return;
-    
-    fprintf(f, "# Comentário\n");
-    fprintf(f, "\n");
-    fprintf(f, "rq CEP001\n");
-    fprintf(f, "rf CEP002\n");
-    fprintf(f, "rc CEP001\n");
-    
-    fclose(f);
-    
-    /* Arquivo foi criado corretamente */
-    FILE *check = fopen(test_file, "r");
-    TEST_ASSERT_NOT_NULL(check);
-    fclose(check);
-    
-    remove(test_file);
-}
-
-/* Testa arquivo com linhas malformadas */
-void test_parse_qry_malformed_lines(void) 
-{
-    const char *test_file = "malformed_query.qry";
-    
-    FILE *f = fopen(test_file, "w");
-    if (f == NULL) return;
-    
-    fprintf(f, "rq\n");              /* Sem argumento */
-    fprintf(f, "unknown_cmd CEP\n"); /* Comando desconhecido */
-    fprintf(f, "rq CEP001\n");       /* Válido */
-    fprintf(f, "\n");                /* Linha vazia */
-    
-    fclose(f);
-    
+    parseQry("nao_existe_xyz.qry", h_quadras, h_hab, h_mor, svg_out, txt_out);
     TEST_ASSERT_TRUE(1);
-    
-    remove(test_file);
 }
 
-/* Testa arquivo com diferentes comandos de query */
-void test_parse_qry_various_commands(void) 
+void test_parseQry_empty_file(void)
 {
-    const char *test_file = "various_query.qry";
-    
-    FILE *f = fopen(test_file, "w");
-    if (f == NULL) return;
-    
-    fprintf(f, "# Teste de diversos comandos\n");
-    fprintf(f, "rq CEP001\n");     /* Residentes por quadra */
-    fprintf(f, "rf CEP001 N\n");   /* Residentes por face */
-    fprintf(f, "rc CEP001\n");     /* Contagem por face */
-    fprintf(f, "c\n");             /* Censo */
-    fprintf(f, "e CEP001 CEP002\n"); /* Entre CEPs */
-    
-    fclose(f);
-    
-    FILE *check = fopen(test_file, "r");
-    TEST_ASSERT_NOT_NULL(check);
-    fclose(check);
-    
-    remove(test_file);
+    write_qry("");
+    run_qry();
+    char buf[256];
+    read_file(TMP_TXT, buf, sizeof(buf));
+    TEST_ASSERT_EQUAL_INT(0, (int)strlen(buf)); /* TXT vazio */
 }
 
-/* Testa arquivo com CEPs diversos */
-void test_parse_qry_multiple_ceps(void) 
+void test_parseQry_comments_and_blank_lines(void)
 {
-    const char *test_file = "multi_cep_query.qry";
-    
-    FILE *f = fopen(test_file, "w");
-    if (f == NULL) return;
-    
-    fprintf(f, "rq CEP001\n");
-    fprintf(f, "rq CEP002\n");
-    fprintf(f, "rq CEP003\n");
-    fprintf(f, "rf CEP001 N\n");
-    fprintf(f, "rf CEP002 S\n");
-    fprintf(f, "rf CEP003 L\n");
-    
-    fclose(f);
-    
-    TEST_ASSERT_TRUE(1);
-    
-    remove(test_file);
+    write_qry("# comentario\n\n# outro\n\n");
+    run_qry();
+    char buf[256];
+    read_file(TMP_TXT, buf, sizeof(buf));
+    TEST_ASSERT_EQUAL_INT(0, (int)strlen(buf));
 }
 
-/* Testa linhas muito longas */
-void test_parse_qry_long_lines(void) 
+void test_parseQry_unknown_command(void)
 {
-    const char *test_file = "long_line_query.qry";
-    
-    FILE *f = fopen(test_file, "w");
-    if (f == NULL) return;
-    
-    fprintf(f, "rq ");
-    for (int i = 0; i < 200; i++) {
-        fprintf(f, "X");
-    }
-    fprintf(f, "\n");
-    
-    fclose(f);
-    
-    TEST_ASSERT_TRUE(1);
-    
-    remove(test_file);
+    write_qry("comandoinvalido arg1\n");
+    run_qry();
+    TEST_ASSERT_TRUE(1); /* Não crashou */
 }
 
-/* Testa arquivo com múltiplos espaços */
-void test_parse_qry_extra_spaces(void) 
+/* ─── rq ──────────────────────────────────────────────────────────── */
+
+void test_parseQry_rq_existing(void)
 {
-    const char *test_file = "spaces_query.qry";
-    
-    FILE *f = fopen(test_file, "w");
-    if (f == NULL) return;
-    
-    fprintf(f, "rq    CEP001\n");      /* Múltiplos espaços */
-    fprintf(f, "rf   CEP002   N\n");   /* Múltiplos espaços */
-    fprintf(f, "\n\n");                /* Múltiplas linhas vazias */
-    
-    fclose(f);
-    
-    TEST_ASSERT_TRUE(1);
-    
-    remove(test_file);
+    write_qry("rq cep01\n");
+    run_qry();
+
+    char txt[2048];
+    read_file(TMP_TXT, txt, sizeof(txt));
+
+    /* Cabeçalho do comando */
+    TEST_ASSERT_TRUE(strstr(txt, "[*] rq cep01") != NULL);
+    /* CPFs dos moradores afetados (Joao e Maria) */
+    TEST_ASSERT_TRUE(strstr(txt, "11111111111") != NULL);
+    TEST_ASSERT_TRUE(strstr(txt, "22222222222") != NULL);
+
+    /* SVG: cruz vermelha (texto) na âncora da quadra */
+    char svg[2048];
+    read_file(TMP_SVG, svg, sizeof(svg));
+    TEST_ASSERT_TRUE(strstr(svg, "text") != NULL);
 }
 
-/* Testa comandos case sensitive */
-void test_parse_qry_case_sensitive(void) 
+void test_parseQry_rq_removes_residents(void)
 {
-    const char *test_file = "case_query.qry";
-    
-    FILE *f = fopen(test_file, "w");
-    if (f == NULL) return;
-    
-    fprintf(f, "rq CEP001\n");   /* Minúscula - válido */
-    fprintf(f, "RQ CEP002\n");   /* Maiúscula - inválido? */
-    fprintf(f, "Rq CEP003\n");   /* Misto - inválido? */
-    
-    fclose(f);
-    
-    TEST_ASSERT_TRUE(1);
-    
-    remove(test_file);
+    write_qry("rq cep01\n");
+    run_qry();
+
+    /* Moradores devem ter sido removidos do hashfile (viram sem-teto) */
+    TEST_ASSERT_FALSE(hashExists(h_mor, "11111111111"));
+    TEST_ASSERT_FALSE(hashExists(h_mor, "22222222222"));
+    /* Mas ainda são habitantes */
+    TEST_ASSERT_TRUE(hashExists(h_hab, "11111111111"));
 }
 
-/* Testa arquivo com caracteres especiais em CEP */
-void test_parse_qry_special_chars_in_cep(void) 
+void test_parseQry_rq_nonexistent_cep(void)
 {
-    const char *test_file = "special_cep_query.qry";
-    
-    FILE *f = fopen(test_file, "w");
-    if (f == NULL) return;
-    
-    fprintf(f, "rq CEP-001\n");     /* Com hífen */
-    fprintf(f, "rq CEP_001\n");     /* Com underscore */
-    fprintf(f, "rq CEP.001\n");     /* Com ponto */
-    
-    fclose(f);
-    
-    TEST_ASSERT_TRUE(1);
-    
-    remove(test_file);
+    write_qry("rq cep_inexistente\n");
+    run_qry();
+
+    char txt[512];
+    read_file(TMP_TXT, txt, sizeof(txt));
+    TEST_ASSERT_TRUE(strstr(txt, "ERRO") != NULL);
 }
 
-/* Testa arquivo com faces diferentes */
-void test_parse_qry_different_faces(void) 
+/* ─── pq ──────────────────────────────────────────────────────────── */
+
+void test_parseQry_pq_existing(void)
 {
-    const char *test_file = "faces_query.qry";
-    
-    FILE *f = fopen(test_file, "w");
-    if (f == NULL) return;
-    
-    fprintf(f, "rf CEP001 N\n");
-    fprintf(f, "rf CEP001 S\n");
-    fprintf(f, "rf CEP001 L\n");
-    fprintf(f, "rf CEP001 O\n");
-    
-    fclose(f);
-    
-    TEST_ASSERT_TRUE(1);
-    
-    remove(test_file);
+    write_qry("pq cep01\n");
+    run_qry();
+
+    char txt[2048];
+    read_file(TMP_TXT, txt, sizeof(txt));
+
+    TEST_ASSERT_TRUE(strstr(txt, "[*] pq cep01") != NULL);
+    TEST_ASSERT_TRUE(strstr(txt, "Face N: 1")    != NULL); /* Joao */
+    TEST_ASSERT_TRUE(strstr(txt, "Face S: 1")    != NULL); /* Maria */
+    TEST_ASSERT_TRUE(strstr(txt, "Total : 2")    != NULL);
+
+    /* SVG: marcações numéricas nas faces */
+    char svg[2048];
+    read_file(TMP_SVG, svg, sizeof(svg));
+    TEST_ASSERT_TRUE(strstr(svg, "text") != NULL);
 }
 
-/* Testa robustez contra arquivos corrompidos */
-void test_parse_qry_corrupted_file(void) 
+void test_parseQry_pq_nonexistent_cep(void)
 {
-    const char *test_file = "corrupted_query.qry";
-    
-    FILE *f = fopen(test_file, "wb");
-    if (f == NULL) return;
-    
-    /* Escrever bytes aleatórios */
-    unsigned char garbage[] = {0xFF, 0xFE, 0xFD, 0xFC, 0x00, 0xFF};
-    fwrite(garbage, sizeof(garbage), 1, f);
-    
-    fclose(f);
-    
-    TEST_ASSERT_TRUE(1);
-    
-    remove(test_file);
+    write_qry("pq cep_inexistente\n");
+    run_qry();
+
+    char txt[512];
+    read_file(TMP_TXT, txt, sizeof(txt));
+    TEST_ASSERT_TRUE(strstr(txt, "ERRO") != NULL);
 }
 
-/* Testa arquivo grande com muitas queries */
-void test_parse_qry_large_file(void) 
+/* ─── censo ───────────────────────────────────────────────────────── */
+
+void test_parseQry_censo(void)
 {
-    const char *test_file = "large_query.qry";
-    
-    FILE *f = fopen(test_file, "w");
-    if (f == NULL) return;
-    
-    /* Gerar 1000 queries */
-    for (int i = 0; i < 1000; i++) {
-        char cep[20];
-        snprintf(cep, sizeof(cep), "CEP%06d", i);
-        fprintf(f, "rq %s\n", cep);
-    }
-    
-    fclose(f);
-    
-    /* Verificar tamanho */
-    FILE *check = fopen(test_file, "r");
-    TEST_ASSERT_NOT_NULL(check);
-    
-    fseek(check, 0, SEEK_END);
-    long size = ftell(check);
-    fclose(check);
-    
-    TEST_ASSERT_TRUE(size > 10000); /* Arquivo deve ter tamanho significativo */
-    
-    remove(test_file);
+    write_qry("censo\n");
+    run_qry();
+
+    char txt[2048];
+    read_file(TMP_TXT, txt, sizeof(txt));
+
+    TEST_ASSERT_TRUE(strstr(txt, "Total de habitantes: 3") != NULL);
+    TEST_ASSERT_TRUE(strstr(txt, "Total de moradores: 2")  != NULL);
+    TEST_ASSERT_TRUE(strstr(txt, "Total de sem-tetos: 1")  != NULL);
+}
+
+/* ─── h? ──────────────────────────────────────────────────────────── */
+
+void test_parseQry_h_morador(void)
+{
+    write_qry("h? 11111111111\n");
+    run_qry();
+
+    char txt[2048];
+    read_file(TMP_TXT, txt, sizeof(txt));
+
+    TEST_ASSERT_TRUE(strstr(txt, "11111111111") != NULL);
+    TEST_ASSERT_TRUE(strstr(txt, "Joao")        != NULL);
+    TEST_ASSERT_TRUE(strstr(txt, "cep01")       != NULL); /* endereço reportado */
+}
+
+void test_parseQry_h_semteto(void)
+{
+    write_qry("h? 33333333333\n");
+    run_qry();
+
+    char txt[2048];
+    read_file(TMP_TXT, txt, sizeof(txt));
+
+    TEST_ASSERT_TRUE(strstr(txt, "33333333333") != NULL);
+    TEST_ASSERT_TRUE(strstr(txt, "sem-teto")    != NULL);
+}
+
+void test_parseQry_h_nonexistent(void)
+{
+    write_qry("h? 99999999999\n");
+    run_qry();
+
+    char txt[512];
+    read_file(TMP_TXT, txt, sizeof(txt));
+    TEST_ASSERT_TRUE(strstr(txt, "ERRO") != NULL);
+}
+
+/* ─── nasc ────────────────────────────────────────────────────────── */
+
+void test_parseQry_nasc_inserts_habitante(void)
+{
+    write_qry("nasc 44444444444 Ana Lima F 20/08/2000\n");
+    run_qry();
+
+    /* Deve existir no hashfile após o comando */
+    TEST_ASSERT_TRUE(hashExists(h_hab, "44444444444"));
+    /* Não deve ser morador */
+    TEST_ASSERT_FALSE(hashExists(h_mor, "44444444444"));
+}
+
+/* ─── rip ─────────────────────────────────────────────────────────── */
+
+void test_parseQry_rip_morador(void)
+{
+    write_qry("rip 11111111111\n");
+    run_qry();
+
+    char txt[2048];
+    read_file(TMP_TXT, txt, sizeof(txt));
+
+    TEST_ASSERT_TRUE(strstr(txt, "11111111111") != NULL);
+    TEST_ASSERT_TRUE(strstr(txt, "cep01")       != NULL);
+
+    /* SVG: cruz vermelha no local do endereço */
+    char svg[2048];
+    read_file(TMP_SVG, svg, sizeof(svg));
+    TEST_ASSERT_TRUE(strstr(svg, "text") != NULL);
+
+    /* Removido de ambos os hashfiles */
+    TEST_ASSERT_FALSE(hashExists(h_hab, "11111111111"));
+    TEST_ASSERT_FALSE(hashExists(h_mor, "11111111111"));
+}
+
+void test_parseQry_rip_semteto(void)
+{
+    write_qry("rip 33333333333\n");
+    run_qry();
+
+    /* Sem-teto também é removido de h_hab */
+    TEST_ASSERT_FALSE(hashExists(h_hab, "33333333333"));
+}
+
+void test_parseQry_rip_nonexistent(void)
+{
+    write_qry("rip 99999999999\n");
+    run_qry();
+
+    char txt[512];
+    read_file(TMP_TXT, txt, sizeof(txt));
+    TEST_ASSERT_TRUE(strstr(txt, "ERRO") != NULL);
+}
+
+/* ─── mud ─────────────────────────────────────────────────────────── */
+
+void test_parseQry_mud_changes_address(void)
+{
+    write_qry("mud 11111111111 cep02 S 80 Fundos\n");
+    run_qry();
+
+    /* SVG: quadrado vermelho com CPF no destino */
+    char svg[2048];
+    read_file(TMP_SVG, svg, sizeof(svg));
+    TEST_ASSERT_TRUE(strstr(svg, "rect")        != NULL);
+    TEST_ASSERT_TRUE(strstr(svg, "11111111111") != NULL);
+
+    /* Ainda deve ser morador */
+    TEST_ASSERT_TRUE(hashExists(h_mor, "11111111111"));
+}
+
+void test_parseQry_mud_nonexistent_cpf(void)
+{
+    write_qry("mud 99999999999 cep01 N 10 Casa\n");
+    run_qry();
+
+    char txt[512];
+    read_file(TMP_TXT, txt, sizeof(txt));
+    TEST_ASSERT_TRUE(strstr(txt, "ERRO") != NULL);
+}
+
+/* ─── dspj ────────────────────────────────────────────────────────── */
+
+void test_parseQry_dspj_morador(void)
+{
+    write_qry("dspj 11111111111\n");
+    run_qry();
+
+    char txt[2048];
+    read_file(TMP_TXT, txt, sizeof(txt));
+    TEST_ASSERT_TRUE(strstr(txt, "11111111111") != NULL);
+    TEST_ASSERT_TRUE(strstr(txt, "cep01")       != NULL);
+
+    /* SVG: círculo preto no local do despejo */
+    char svg[2048];
+    read_file(TMP_SVG, svg, sizeof(svg));
+    TEST_ASSERT_TRUE(strstr(svg, "circle") != NULL);
+
+    /* Deve ter virado sem-teto */
+    TEST_ASSERT_FALSE(hashExists(h_mor, "11111111111"));
+    TEST_ASSERT_TRUE(hashExists(h_hab, "11111111111")); /* ainda habitante */
+}
+
+void test_parseQry_dspj_semteto(void)
+{
+    write_qry("dspj 33333333333\n");
+    run_qry();
+
+    char txt[512];
+    read_file(TMP_TXT, txt, sizeof(txt));
+    TEST_ASSERT_TRUE(strstr(txt, "ERRO") != NULL);
+}
+
+/* ─── múltiplos comandos em sequência ────────────────────────────── */
+
+void test_parseQry_multiple_commands(void)
+{
+    write_qry(
+        "nasc 55555555555 Carlos Dias M 05/05/1995\n"
+        "h? 22222222222\n"
+        "censo\n"
+        "pq cep01\n"
+    );
+    run_qry();
+
+    char txt[4096];
+    read_file(TMP_TXT, txt, sizeof(txt));
+
+    /* nasc: novo habitante inserido */
+    TEST_ASSERT_TRUE(hashExists(h_hab, "55555555555"));
+    /* h?: dados de Maria reportados */
+    TEST_ASSERT_TRUE(strstr(txt, "22222222222")         != NULL);
+    /* censo: executado */
+    TEST_ASSERT_TRUE(strstr(txt, "Total de habitantes") != NULL);
+    /* pq: contagem por face */
+    TEST_ASSERT_TRUE(strstr(txt, "[*] pq cep01")        != NULL);
 }
 
 int main(void)
 {
     UNITY_BEGIN();
-    RUN_TEST(test_query_file_creation);
-    RUN_TEST(test_parse_qry_empty_file);
-    RUN_TEST(test_parse_qry_simple_lines);
-    RUN_TEST(test_parse_qry_malformed_lines);
-    RUN_TEST(test_parse_qry_various_commands);
-    RUN_TEST(test_parse_qry_multiple_ceps);
-    RUN_TEST(test_parse_qry_long_lines);
-    RUN_TEST(test_parse_qry_extra_spaces);
-    RUN_TEST(test_parse_qry_case_sensitive);
-    RUN_TEST(test_parse_qry_special_chars_in_cep);
-    RUN_TEST(test_parse_qry_different_faces);
-    RUN_TEST(test_parse_qry_corrupted_file);
-    RUN_TEST(test_parse_qry_large_file);
+
+    RUN_TEST(test_parseQry_null_params);
+    RUN_TEST(test_parseQry_nonexistent_file);
+    RUN_TEST(test_parseQry_empty_file);
+    RUN_TEST(test_parseQry_comments_and_blank_lines);
+    RUN_TEST(test_parseQry_unknown_command);
+
+    RUN_TEST(test_parseQry_rq_existing);
+    RUN_TEST(test_parseQry_rq_removes_residents);
+    RUN_TEST(test_parseQry_rq_nonexistent_cep);
+
+    RUN_TEST(test_parseQry_pq_existing);
+    RUN_TEST(test_parseQry_pq_nonexistent_cep);
+
+    RUN_TEST(test_parseQry_censo);
+
+    RUN_TEST(test_parseQry_h_morador);
+    RUN_TEST(test_parseQry_h_semteto);
+    RUN_TEST(test_parseQry_h_nonexistent);
+
+    RUN_TEST(test_parseQry_nasc_inserts_habitante);
+
+    RUN_TEST(test_parseQry_rip_morador);
+    RUN_TEST(test_parseQry_rip_semteto);
+    RUN_TEST(test_parseQry_rip_nonexistent);
+
+    RUN_TEST(test_parseQry_mud_changes_address);
+    RUN_TEST(test_parseQry_mud_nonexistent_cpf);
+
+    RUN_TEST(test_parseQry_dspj_morador);
+    RUN_TEST(test_parseQry_dspj_semteto);
+
+    RUN_TEST(test_parseQry_multiple_commands);
+
     return UNITY_END();
 }
