@@ -69,8 +69,8 @@ void stopSVG(FILE *file_name)
 
 void svgInsertQuadra(FILE *file_name, Quadra r)
 {
-    fprintf(file_name, "\t<rect id=\"%s\" x=\"%lf\" y=\"%lf\" width=\"%lf\" height=\"%lf\" fill=\"%s\" stroke=\"%s\" stroke-width=\"1.0px\" fill-opacity=\"%lf\" />\n",
-	    quadraGetCep(r), quadraGetCoordX(r), quadraGetCoordY(r), quadraGetWidth(r), quadraGetHeight(r), quadraGetCorPreench(r), quadraGetCorBorda(r), 0.5);
+    fprintf(file_name, "\t<rect id=\"%s\" x=\"%lf\" y=\"%lf\" width=\"%lf\" height=\"%lf\" fill=\"%s\" stroke=\"%s\" stroke-width=\"%lf\" fill-opacity=\"%lf\" />\n",
+	    quadraGetCep(r), quadraGetCoordX(r), quadraGetCoordY(r), quadraGetWidth(r), quadraGetHeight(r), quadraGetCorPreench(r), quadraGetCorBorda(r), quadraGetBordaWidth(r), 0.5);
 }
 
 void svgMarcaRedCross(FILE *file_name, double x, double y)
