@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 #include "quadra.h"
-#include "lista.h"
 
 
 /******************************************************************
@@ -38,19 +37,6 @@ void svgMarcaContagemFace(FILE *svg, Quadra q, char face, int contagem);
 
 void svgMarcaContagemTotal(FILE *svg, Quadra q, int total);
 
-/******************************************************************
-*@brief Função de callback para `fila_passthrough` que desenha um item.
-*@param i O item (forma) a ser desenhado.
-*@param aux O ponteiro (FILE*) para o arquivo SVG (passado como aux_data).
-******************************************************************/
-void draw(item i, item aux);
 
-/******************************************************************
-*@brief Função principal que gera o arquivo SVG completo.
-*@param file_name O caminho completo do arquivo .svg a ser criado.
-*@param formas A Fila/Lista contendo todas as formas a serem desenhadas.
-*@return Retorna o ponteiro para o arquivo criado (FILE*).
-******************************************************************/
-FILE *createSVG(const char *file_name, Lista *formas);
 
 #endif

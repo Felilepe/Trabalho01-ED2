@@ -1,7 +1,6 @@
 #include "../unity.h"
 #include "../svg.h"
 #include "../quadra.h"
-#include "../lista.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -254,53 +253,6 @@ void test_svgMarcaContagemTotal(void)
     fclose(check);
 }
 
-/* Testa createSVG com lista de quadras */
-void test_createSVG(void) 
-{
-    Lista *l = lista_create();
-    
-    Quadra q1 = quadraCreate("CEP001", 0.0, 0.0, 100.0, 100.0);
-    Quadra q2 = quadraCreate("CEP002", 100.0, 0.0, 100.0, 100.0);
-    
-    lista_insertTail(l, (item)q1);
-    lista_insertTail(l, (item)q2);
-    
-    FILE *svg = createSVG(test_svg_file, l);
-    
-    TEST_ASSERT_NOT_NULL(svg);
-    
-    stopSVG(svg);
-    svg = NULL;
-    
-    /* Verificar se arquivo foi criado com conteúdo */
-    FILE *check = fopen(test_svg_file, "r");
-    TEST_ASSERT_NOT_NULL(check);
-    
-    char buffer[512];
-    char content[4096] = "";
-    while (fgets(buffer, sizeof(buffer), check) != NULL) {
-        strcat(content, buffer);
-    }
-    
-    TEST_ASSERT_TRUE(strstr(content, "CEP001") != NULL);
-    TEST_ASSERT_TRUE(strstr(content, "CEP002") != NULL);
-    
-    fclose(check);
-    
-    /* Limpeza */
-    quadraDestroy(q1);
-    quadraDestroy(q2);
-    lista_destroy(l);
-}
-
-/* Testa createSVG com lista NULL */
-void test_createSVG_null_list(void) 
-{
-    FILE *svg = createSVG(test_svg_file, NULL);
-    
-    TEST_ASSERT_NULL(svg);
-}
-
 /* Testa múltiplas inserções no SVG */
 void test_svg_multiple_insertions(void) 
 {
@@ -384,8 +336,6 @@ int main(void)
     RUN_TEST(test_svgMarcaCep);
     RUN_TEST(test_svgMarcaContagemFace);
     RUN_TEST(test_svgMarcaContagemTotal);
-    RUN_TEST(test_createSVG);
-    RUN_TEST(test_createSVG_null_list);
     RUN_TEST(test_svg_multiple_insertions);
     RUN_TEST(test_stopSVG_closes_file);
     RUN_TEST(test_stopSVG_closes_svg_tag);

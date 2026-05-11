@@ -13,7 +13,7 @@ TST_DIR   = tst
 UNITY_DIR = .
 
 # ── Módulos do projeto ──────────────────────────────────────────────
-MODULOS = quadra habitante morador lista hte svg parse_geo parse_pm parse_qry
+MODULOS = quadra habitante morador hte svg parse_geo parse_pm parse_qry
 
 OBJETOS = $(patsubst %, $(SRC_DIR)/%.o, $(MODULOS)) $(SRC_DIR)/ted.o
 
@@ -38,10 +38,9 @@ $(SRC_DIR)/ted.o:       $(SRC_DIR)/ted.c \
 $(SRC_DIR)/quadra.o:    $(SRC_DIR)/quadra.c    $(SRC_DIR)/quadra.h
 $(SRC_DIR)/habitante.o: $(SRC_DIR)/habitante.c $(SRC_DIR)/habitante.h
 $(SRC_DIR)/morador.o:   $(SRC_DIR)/morador.c   $(SRC_DIR)/morador.h
-$(SRC_DIR)/lista.o:     $(SRC_DIR)/lista.c      $(SRC_DIR)/lista.h
 $(SRC_DIR)/hte.o:       $(SRC_DIR)/hte.c        $(SRC_DIR)/hte.h
 $(SRC_DIR)/svg.o:       $(SRC_DIR)/svg.c        $(SRC_DIR)/svg.h \
-                        $(SRC_DIR)/quadra.h     $(SRC_DIR)/lista.h
+                        $(SRC_DIR)/quadra.h     
 $(SRC_DIR)/parse_geo.o: $(SRC_DIR)/parse_geo.c  $(SRC_DIR)/parse_geo.h \
                         $(SRC_DIR)/hte.h        $(SRC_DIR)/quadra.h \
                         $(SRC_DIR)/svg.h
@@ -68,11 +67,6 @@ t_quadra: $(TST_DIR)/t_quadra.c $(SRC_DIR)/quadra.o
 	$(CC) $(CFLAGS) $^ $(UNITY_OBJ) -o $(TST_DIR)/t_quadra
 	$(TST_DIR)/t_quadra
 
-# ── lista ───────────────────────────────────────────────────────────
-t_lista: $(TST_DIR)/t_lista.c $(SRC_DIR)/lista.o
-	$(CC) $(CFLAGS) $^ $(UNITY_OBJ) -o $(TST_DIR)/t_lista
-	$(TST_DIR)/t_lista
-
 # ── habitante ───────────────────────────────────────────────────────
 t_habitante: $(TST_DIR)/t_habitante.c $(SRC_DIR)/habitante.o
 	$(CC) $(CFLAGS) $^ $(UNITY_OBJ) -o $(TST_DIR)/t_habitante
@@ -86,7 +80,6 @@ t_morador: $(TST_DIR)/t_morador.c $(SRC_DIR)/morador.o
 # ── parse_geo ───────────────────────────────────────────────────────
 t_parse_geo: $(TST_DIR)/t_parse_geo.c $(SRC_DIR)/parse_geo.o \
              $(SRC_DIR)/hte.o $(SRC_DIR)/quadra.o $(SRC_DIR)/svg.o \
-             $(SRC_DIR)/lista.o
 	$(CC) $(CFLAGS) $^ $(UNITY_OBJ) -o $(TST_DIR)/t_parse_geo
 	$(TST_DIR)/t_parse_geo
 
@@ -98,7 +91,6 @@ t_parse_pm: $(TST_DIR)/t_parse_pm.c $(SRC_DIR)/parse_pm.o \
 
 # ── svg ─────────────────────────────────────────────────────────────
 t_svg: $(TST_DIR)/t_svg.c $(SRC_DIR)/svg.o $(SRC_DIR)/quadra.o \
-       $(SRC_DIR)/lista.o
 	$(CC) $(CFLAGS) $^ $(UNITY_OBJ) -o $(TST_DIR)/t_svg
 	$(TST_DIR)/t_svg
 
@@ -106,7 +98,6 @@ t_svg: $(TST_DIR)/t_svg.c $(SRC_DIR)/svg.o $(SRC_DIR)/quadra.o \
 t_parse_qry: $(TST_DIR)/t_parse_qry.c $(SRC_DIR)/parse_qry.o \
              $(SRC_DIR)/parse_geo.o $(SRC_DIR)/parse_pm.o \
              $(SRC_DIR)/hte.o $(SRC_DIR)/quadra.o $(SRC_DIR)/svg.o \
-             $(SRC_DIR)/lista.o
 	$(CC) $(CFLAGS) $^ $(UNITY_OBJ) -o $(TST_DIR)/t_parse_qry
 	$(TST_DIR)/t_parse_qry
 
@@ -116,7 +107,7 @@ tests: $(TST_DIR)/test_runner.c $(OBJETOS)
 	$(TST_DIR)/test_runner
 
 # ── Roda todos os testes individualmente ──────────────────────────────
-tstall: t_hte t_quadra t_lista t_habitante t_morador t_parse_geo \
+tstall: t_hte t_quadra t_habitante t_morador t_parse_geo \
         t_parse_pm t_svg t_parse_qry
 
 # ════════════════════════════════════════════════════════════════════
@@ -124,11 +115,11 @@ tstall: t_hte t_quadra t_lista t_habitante t_morador t_parse_geo \
 # ════════════════════════════════════════════════════════════════════
 clean:
 	rm -f $(OBJETOS) $(SRC_DIR)/$(PROJ_NAME)
-	rm -f $(TST_DIR)/t_hte $(TST_DIR)/t_quadra $(TST_DIR)/t_lista \
+	rm -f $(TST_DIR)/t_hte $(TST_DIR)/t_quadra \
 	      $(TST_DIR)/t_habitante $(TST_DIR)/t_morador \
 	      $(TST_DIR)/t_parse_geo $(TST_DIR)/t_parse_pm \
 	      $(TST_DIR)/t_svg $(TST_DIR)/t_parse_qry \
 	      $(TST_DIR)/test_runner
 
-.PHONY: tstall tests t_hte t_quadra t_lista t_habitante t_morador \
+.PHONY: tstall tests t_hte t_quadra t_habitante t_morador \
         t_parse_geo t_parse_pm t_svg t_parse_qry clean

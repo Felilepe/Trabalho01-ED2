@@ -4,7 +4,6 @@
 #include "quadra.h"
 #include "svg.h"
 
-#include "lista.h"
 
 
 #define OPACITY 0.5
@@ -124,30 +123,4 @@ void svgMarcaContagemTotal(FILE *svg, Quadra q, int total)
     char texto[16];
     snprintf(texto, sizeof(texto), "%d", total);
     insert_text(svg, x, y, texto, "black", "black", "10", "middle");
-}
-
-
-
-void draw(item i, item aux)
-{
-    FILE* svg = (FILE*)aux;
-    svgInsertQuadra(svg, (Quadra)i);
-}
-
-FILE* createSVG(const char *svg_path, Lista *formas)
-{
-    if (formas == NULL) {
-        fprintf(stderr, "Aviso: lista NULL em createSVG (%s)\n", svg_path);
-        return NULL;
-    }
-
-    FILE *arquivo_svg = startSVG(svg_path);
-    if (arquivo_svg == NULL) {
-        printf("Erro ao abrir arquivo SVG.\n");
-        return NULL;
-    }
-
-    lista_passthrough(formas, callback_inserir_quadra, arquivo_svg);
-
-    return arquivo_svg;
 }
