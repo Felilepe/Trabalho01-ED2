@@ -137,6 +137,7 @@ void habitanteSetNascimento(habitante h, char* nascimento)
 
 void habitanteDestroy(habitante h)
 {
+    if (h == NULL) return;
     Habitante *hab = (Habitante*)h;
     free(hab -> nome);
     free(hab -> sobrenome);
