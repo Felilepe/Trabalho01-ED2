@@ -123,6 +123,7 @@ void moradorSetNumero(Morador m, int num)
 
 void moradorDestroy(Morador m)
 {
+    if (m == NULL) return;
     morador *hab = (morador*)m;
     free(hab -> cep);
     free(hab -> cpf);
