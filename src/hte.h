@@ -4,15 +4,6 @@
 #include <stdbool.h>
 #include <stddef.h>
  
-/**
- * @brief Tamanho máximo em bytes de um registro de dados.
- * Deve ser maior ou igual ao sizeof() de qualquer struct que
- * será armazenada no hashfile. Ajuste se necessário.
- * Estimativa atual:
- * HabitanteReg: ~133 bytes
- * MoradorReg:   ~ 95 bytes
- **/
-#define MAX_DATA_SIZE 256
  
 /**
  * @typedef Hash

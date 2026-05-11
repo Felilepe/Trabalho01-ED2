@@ -4,7 +4,10 @@
 #include <string.h>
 #include <stdio.h>
 
+#define MAX_DATA_SIZE 256
+
 Hash h;
+
 
 void setUp(void)
 {

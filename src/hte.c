@@ -8,6 +8,8 @@
 #define RECORDS_PER_BUCKET  50
 #define MAX_KEY_LENGTH      32   
 #define MAX_PATH_LENGTH     512
+#define MAX_DATA_SIZE 256
+
  
 
 
