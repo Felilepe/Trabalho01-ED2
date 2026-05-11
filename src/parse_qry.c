@@ -233,7 +233,7 @@ static void processar_pq(const char *linha, Hash h_quadras, Hash h_mor, FILE *sv
         return;
     }
 
-    fprintf(txt, "\n--- COMANDO PQ --- argumentos: %s ---\n\n", cep);
+    fprintf(txt, "[*] pq %s\n", cep);
 
     QuadraReg qreg;
     if (!hashGetRegistry(h_quadras, cep, &qreg, sizeof(QuadraReg))) {
@@ -496,7 +496,7 @@ static void processar_dspj(const char *linha,
 
     MoradorReg mreg;
     if (!hashGetRegistry(h_mor, cpf, &mreg, sizeof(MoradorReg))) {
-        fprintf(txt, "Habitante não é morador.\n");
+        fprintf(txt, "ERRO: '%s' nao e morador\n", cpf);
         return;
     }
 
