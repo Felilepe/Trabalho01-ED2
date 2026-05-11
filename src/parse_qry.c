@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <stdbool.h>
 #include "parse_qry.h"
 #include "parse_geo.h"
@@ -82,11 +83,7 @@ typedef struct {
     int  total;
 } ContFaceAux;
 
-/*
- * FIX Bug 3: substituido array fixo de 256 CPFs por array dinamico.
- * O campo 'cpfs' agora e um vetor de ponteiros alocado com malloc/realloc,
- * evitando perda silenciosa de moradores alem do limite anterior.
- */
+
 typedef struct {
     char  cep[MAX_CEP];
     char **cpfs;      /* array dinamico de strings */
@@ -123,7 +120,6 @@ static void cb_contar_face(char *key, void *data, size_t data_size, void *aux)
     }
 }
 
-/* FIX Bug 3: callback agora cresce o array dinamicamente via realloc. */
 static void cb_coletar_moradores_cep(char *key, void *data, size_t data_size, void *aux)
 {
     (void)data_size;
@@ -192,11 +188,7 @@ static void processar_rq(const char *linha, Hash h_quadras, Hash h_hab, Hash h_m
         return;
     }
 
-    /*
-     * FIX Bug 3: MoradoresCepAux agora usa array dinamico.
-     * Inicializa com capacidade 16 e dobra conforme necessario.
-     * Todos os CPFs coletados sao liberados apos o uso.
-     */
+    
     MoradoresCepAux ctx;
     strncpy(ctx.cep, cep, MAX_CEP);
     ctx.count    = 0;
@@ -241,7 +233,7 @@ static void processar_pq(const char *linha, Hash h_quadras, Hash h_mor, FILE *sv
         return;
     }
 
-    fprintf(txt, "[*] pq %s\n", cep);
+    fprintf(txt, "\n--- COMANDO PQ --- argumentos: %s ---\n\n", cep);
 
     QuadraReg qreg;
     if (!hashGetRegistry(h_quadras, cep, &qreg, sizeof(QuadraReg))) {
@@ -276,7 +268,7 @@ static void processar_pq(const char *linha, Hash h_quadras, Hash h_mor, FILE *sv
 
 static void processar_censo(Hash h_hab, Hash h_mor, FILE *txt)
 {
-    fprintf(txt, "\n--- COMANDO CENSO ---\n\n");
+    fprintf(txt, "[*] censo\n");
 
     CensoAux ctx;
     ctx.total_hab    = 0;
@@ -331,7 +323,7 @@ static void processar_h(const char *linha,
         return;
     }
 
-    fprintf(txt, "\n--- COMANDO H? --- argumentos: %s ---\n\n", cpf);
+    fprintf(txt, "[*] h? %s\n", cpf);
 
     HabitanteReg hreg;
     if (!hashGetRegistry(h_hab, cpf, &hreg, sizeof(HabitanteReg))) {
@@ -371,8 +363,8 @@ static void processar_nasc(const char *linha, Hash h_hab, FILE *txt)
     reg.sexo = sexo_str[0];
     hashInsertReg(h_hab, reg.cpf, &reg, sizeof(HabitanteReg));
     
-    fprintf(txt, "\n--- COMANDO NASC --- argumentos: %s %s %s %s %s ---\n",
-            reg.cpf, reg.nome, reg.sobrenome, sexo_str, reg.nascimento);
+    fprintf(txt, "[*] nasc %s %s %s %s %s\n",
+        reg.cpf, reg.nome, reg.sobrenome, sexo_str, reg.nascimento);
 }
 
 static void processar_rip(const char *linha,
@@ -385,7 +377,7 @@ static void processar_rip(const char *linha,
         return;
     }
 
-    fprintf(txt, "[*] rip %s\n", cpf);
+    fprintf(txt, "\n--- COMANDO RIP --- argumentos: %s ---\n\n", cpf);
 
     HabitanteReg hreg;
     if (!hashGetRegistry(h_hab, cpf, &hreg, sizeof(HabitanteReg))) {
@@ -393,15 +385,15 @@ static void processar_rip(const char *linha,
         return;
     }
 
-    fprintf(txt, "CPF        : %s\n",    hreg.cpf);
-    fprintf(txt, "Nome       : %s %s\n", hreg.nome, hreg.sobrenome);
-    fprintf(txt, "Sexo       : %c\n",    hreg.sexo);
-    fprintf(txt, "Nascimento : %s\n",    hreg.nascimento);
+    fprintf(txt, "- CPF: %s\n",    hreg.cpf);
+    fprintf(txt, "- Nome: %s %s\n", hreg.nome, hreg.sobrenome);
+    fprintf(txt, "- Sexo: %c\n",    hreg.sexo);
+    fprintf(txt, "- Nascimento: %s\n",    hreg.nascimento);
 
     /* Se era morador, reporta endereco e marca no SVG */
     MoradorReg mreg;
     if (hashGetRegistry(h_mor, cpf, &mreg, sizeof(MoradorReg))) {
-        fprintf(txt, "Endereco   : %s / Face.%c / %d / %s\n",
+        fprintf(txt, "- Endereco: %s / Face.%c / %d / %s\n",
                 mreg.cep, mreg.face, mreg.num, mreg.complemento);
 
         QuadraReg qreg;
@@ -434,7 +426,21 @@ static void processar_mud(const char *linha,
         return;
     }
 
-    fprintf(txt, "[*] mud %s\n", cpf);
+    /* Extract the arguments part (everything after 'mud') */
+    const char *args = linha;
+    while (*args && !isspace(*args)) args++; /* skip 'mud' command */
+    while (*args && isspace(*args)) args++;  /* skip whitespace */
+    
+    /* Create args string without trailing newline */
+    char args_buf[256];
+    strncpy(args_buf, args, sizeof(args_buf) - 1);
+    args_buf[sizeof(args_buf) - 1] = '\0';
+    size_t len = strlen(args_buf);
+    if (len > 0 && args_buf[len - 1] == '\n') {
+        args_buf[len - 1] = '\0';
+    }
+    
+    fprintf(txt, "\n--- COMANDO MUD --- argumentos: %s ---\n\n", args_buf);
 
     if (!hashExists(h_hab, cpf)) {
         fprintf(txt, "ERRO: habitante '%s' nao encontrado\n", cpf);
@@ -480,7 +486,7 @@ static void processar_dspj(const char *linha,
         return;
     }
 
-    fprintf(txt, "\n--- COMANDO DSPJ --- argumentos: %s ---\n\n", cpf);
+    fprintf(txt, "[*] dspj %s\n", cpf);
 
     HabitanteReg hreg;
     if (!hashGetRegistry(h_hab, cpf, &hreg, sizeof(HabitanteReg))) {
@@ -490,7 +496,7 @@ static void processar_dspj(const char *linha,
 
     MoradorReg mreg;
     if (!hashGetRegistry(h_mor, cpf, &mreg, sizeof(MoradorReg))) {
-        fprintf(txt, "ERRO: '%s' nao e morador\n", cpf);
+        fprintf(txt, "Habitante não é morador.\n");
         return;
     }
 
