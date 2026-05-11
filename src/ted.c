@@ -196,13 +196,13 @@ int main(int argc, char *argv[])
         }
     }
  
-    // char path_hfd[PATH_LEN];
-    // snprintf(path_hfd, PATH_LEN, "%s/%s_blocks.hfd",    dir_saida, base_geo);
-    // hashDumpFile(h_quadras, path_hfd);
-    // snprintf(path_hfd, PATH_LEN, "%s/%s_people.hfd", dir_saida, base_geo);
-    // hashDumpFile(h_hab, path_hfd);
-    // snprintf(path_hfd, PATH_LEN, "%s/%s_addresses.hfd",  dir_saida, base_geo);
-    // hashDumpFile(h_mor, path_hfd);
+    char path_hfd[PATH_LEN];
+    snprintf(path_hfd, PATH_LEN, "%s/%s_blocks.hfd",    dir_saida, base_geo);
+    hashDumpFile(h_quadras, path_hfd);
+    snprintf(path_hfd, PATH_LEN, "%s/%s_people.hfd", dir_saida, base_geo);
+    hashDumpFile(h_hab, path_hfd);
+    snprintf(path_hfd, PATH_LEN, "%s/%s_addresses.hfd",  dir_saida, base_geo);
+    hashDumpFile(h_mor, path_hfd);
  
     hashCloseFile(h_quadras);
     hashCloseFile(h_hab);
