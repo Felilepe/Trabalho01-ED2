@@ -377,7 +377,7 @@ static void processar_rip(const char *linha,
         return;
     }
 
-    fprintf(txt, "\n--- COMANDO RIP --- argumentos: %s ---\n\n", cpf);
+    fprintf(txt, "[*] rip %s\n", cpf);
 
     HabitanteReg hreg;
     if (!hashGetRegistry(h_hab, cpf, &hreg, sizeof(HabitanteReg))) {
@@ -440,7 +440,7 @@ static void processar_mud(const char *linha,
         args_buf[len - 1] = '\0';
     }
     
-    fprintf(txt, "\n--- COMANDO MUD --- argumentos: %s ---\n\n", args_buf);
+    fprintf(txt, "[*] mud %s\n", args_buf);
 
     if (!hashExists(h_hab, cpf)) {
         fprintf(txt, "ERRO: habitante '%s' nao encontrado\n", cpf);
